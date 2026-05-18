@@ -304,6 +304,15 @@ td.hi{color:var(--accent);font-weight:700}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);background:#fff;font-size:10px;cursor:pointer;transition:.12s;margin:3px}
 .pill:hover{background:var(--bg3)}
 .pill.on{background:var(--abc);border-color:var(--abd);color:var(--accent);font-weight:700}
+/* Floor assignment pills in item settings */
+.flr-assign-wrap{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px;padding:6px;background:var(--bg3);border:1px solid var(--border);border-radius:4px}
+.flr-assign-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;border:1px solid var(--border2);background:#fff;font-size:9px;font-weight:600;cursor:pointer;transition:.12s;color:var(--text2);user-select:none}
+.flr-assign-pill:hover{border-color:var(--purple);color:var(--purple)}
+.flr-assign-pill.on{background:var(--pbg);border-color:var(--pbd);color:var(--purple)}
+.flr-assign-pill.all-pill{color:var(--text3);font-style:italic}
+.flr-assign-pill.all-pill.on{color:var(--accent);background:var(--abc);border-color:var(--abd);font-style:normal}
+.item-flr-tags{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}
+.item-flr-tag{font-size:7px;padding:1px 4px;border-radius:3px;background:var(--pbg);color:var(--purple);border:1px solid var(--pbd);font-weight:700}
 </style>
 </head>
 <body>
@@ -610,6 +619,10 @@ td.hi{color:var(--accent);font-weight:700}
       <div class="set-add-form"><div class="set-add-title">Add / Edit Item</div>
         <div class="set-grid" style="grid-template-columns:70px 1fr"><input class="set-inp" id="newItemId" placeholder="ID"><input class="set-inp" id="newItemDesc" placeholder="Description"></div>
         <div class="set-grid" style="grid-template-columns:1fr 1fr auto"><input class="set-inp" id="newItemAmt" placeholder="Amount (฿)" type="number" min="0"><input class="set-inp" id="newItemWt" placeholder="Weight %" type="number" min="0" step="0.01"><button class="pbtn b" id="addItemBtn" onclick="saveItem()">+ Add</button></div>
+        <div style="font-size:9px;color:var(--text2);margin-bottom:4px;font-weight:700">Applicable Floors <span style="font-weight:400;color:var(--text3)">(leave empty = all floors)</span></div>
+        <div class="flr-assign-wrap" id="itemFlrPills">
+          <span style="font-size:9px;color:var(--text3);font-style:italic">Select a building first</span>
+        </div>
         <div id="itemFormMsg" style="font-size:9px;color:var(--red);min-height:14px;margin-top:4px"></div>
       </div>
     </div>
@@ -762,62 +775,65 @@ function getCurrentBldData(){
   return APP.cp.buildings[APP.currentBuilding]||null;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// IN-MEMORY CANVAS STORE
+// Full-resolution canvases are kept here for the lifetime of the page.
+// Keys: "projectId::buildingName::floorName"
+// On page reload this store is empty → fall back to pdfDataUrl (compressed).
+// ══════════════════════════════════════════════════════════════════
+const CANVAS_STORE = {};
+
+function canvasKey(){
+  return APP.currentProjectId+'::'+APP.currentBuilding+'::'+APP.currentFloor;
+}
+
 /**
- * compressPdf — for localStorage persistence.
- * Caps at 1600×1200 px, PNG format (lossless — preserves thin lines & text).
- * Falls back to JPEG 0.88 if the PNG would exceed ~3 MB.
+ * compressPdf — creates a storage-friendly copy for localStorage.
+ * Max 1600px on the longest side. Reads from S.pdfOff (full-res in memory).
  */
 function compressPdf(){
   if(!S.pdfOff||!S.hasBg)return null;
-  const MAX_PX=1600;
-  const scale=Math.min(MAX_PX/S.pdfW, MAX_PX/S.pdfH, 1); // never upscale
-  const w=Math.round(S.pdfW*scale), h=Math.round(S.pdfH*scale);
-  const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
-  const tCtx=tmp.getContext('2d');
-  tCtx.imageSmoothingEnabled=true;
-  tCtx.imageSmoothingQuality='high';
-  tCtx.drawImage(S.pdfOff,0,0,w,h);
-  // Try PNG first (lossless); if too big (>2.5MB raw data), use high-quality JPEG
+  const MAX=1600;
+  const origW=S._origPdfW||S.pdfOff.width;
+  const origH=S._origPdfH||S.pdfOff.height;
+  const scale=Math.min(MAX/origW, MAX/origH, 1);
+  if(scale>=1) return S.pdfOff.toDataURL('image/png'); // already small enough
+  const w=Math.round(origW*scale), h=Math.round(origH*scale);
+  const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+  const tc=tmp.getContext('2d');
+  tc.imageSmoothingEnabled=true; tc.imageSmoothingQuality='high';
+  tc.drawImage(S.pdfOff,0,0,w,h);
   const png=tmp.toDataURL('image/png');
-  if(png.length<3_400_000)return png;          // ~2.5 MB base64 threshold
-  return tmp.toDataURL('image/jpeg',0.88);
+  return png.length<3400000 ? png : tmp.toDataURL('image/jpeg',0.88);
 }
 
 /**
- * captureHiResPdf — full original resolution, PNG (lossless).
- * Used exclusively during share generation so the recipient sees the
- * exact same image that was rendered locally, with no quality loss.
- * Returns a data URL or null.
+ * captureHiResPdf — full-res PNG for share payload.
  */
-function captureHiResPdf(floorData){
-  // If the live floor is the one being captured, use S.pdfOff (highest quality)
-  const isLive=(floorData===getCurrentFloorData());
-  if(isLive&&S.pdfOff&&S.hasBg){
-    // Export original canvas at 1:1 — this IS the full-resolution source
-    return S.pdfOff.toDataURL('image/png');
-  }
-  // For other floors, the best we have is already stored pdfDataUrl.
-  // Re-decode it into a canvas and re-export as PNG to normalise format.
-  if(!floorData?.pdfDataUrl)return null;
-  // Return the stored data URL as-is (already PNG or high-quality JPEG from a
-  // previous captureHiResPdf call; no further degradation occurs).
-  return floorData.pdfDataUrl;
+function captureHiResPdf(){
+  if(!S.pdfOff||!S.hasBg)return null;
+  return S.pdfOff.toDataURL('image/png');
 }
 
-/** Restore canvas image from data URL — always uses the image's natural dimensions */
-async function pdfFromDataUrl(dataUrl){
+/**
+ * pdfFromDataUrl — decode a data URL into a canvas element.
+ * targetW/H: render at these dimensions so S.pdfW/H matches calibration space.
+ * NOTE: only used as a fallback on page reload. During a normal session the
+ *       full-res canvas comes from CANVAS_STORE instead.
+ */
+async function pdfFromDataUrl(dataUrl, targetW, targetH){
   return new Promise(res=>{
     if(!dataUrl){res(null);return;}
     const img=new Image();
     img.onload=()=>{
-      const off=document.createElement('canvas');
-      // Use the actual decoded image dimensions (preserves original resolution)
-      off.width=img.naturalWidth;
-      off.height=img.naturalHeight;
+      // Use target dimensions if supplied (= original PDF size),
+      // otherwise fall back to the image's natural (compressed) dimensions.
+      const w=targetW||img.naturalWidth;
+      const h=targetH||img.naturalHeight;
+      const off=document.createElement('canvas'); off.width=w; off.height=h;
       const c=off.getContext('2d');
-      c.imageSmoothingEnabled=true;
-      c.imageSmoothingQuality='high';
-      c.drawImage(img,0,0,off.width,off.height);
+      c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high';
+      c.drawImage(img,0,0,w,h);
       res(off);
     };
     img.onerror=()=>res(null);
@@ -827,52 +843,103 @@ async function pdfFromDataUrl(dataUrl){
 
 function saveFloorState(){
   const fld=getCurrentFloorData(); if(!fld)return;
-  // For localStorage, use the compressed (storage-optimised) version to stay within quota.
-  // S.pdfDataUrl always holds the full-res PNG (used during share generation).
+
   if(S.pdfOff && S.hasBg){
-    // Only re-compress if the floor plan was changed this load
+    // Persist the in-memory canvas reference for this session
+    CANVAS_STORE[canvasKey()]=S.pdfOff;
+
+    // Save the true original dimensions once and never overwrite them
+    if(!fld.origPdfW) fld.origPdfW=S._origPdfW||S.pdfOff.width;
+    if(!fld.origPdfH) fld.origPdfH=S._origPdfH||S.pdfOff.height;
+
+    // Compress to localStorage only once per fresh-upload session
     if(!S._pdfSavedThisLoad){
-      fld.pdfDataUrl=compressPdf();     // storage-friendly (≤1600px, PNG/JPEG)
-      fld.pdfW=S.pdfW; fld.pdfH=S.pdfH;
+      fld.pdfDataUrl=compressPdf();
+      fld.pdfW=fld.origPdfW;
+      fld.pdfH=fld.origPdfH;
       S._pdfSavedThisLoad=true;
     }
+    fld.hasBg=true;
   }
-  fld.shapes=S.shapes; fld.manuals=S.manuals;
+
+  try{
+    fld.shapes=JSON.parse(JSON.stringify(S.shapes));
+    fld.manuals=JSON.parse(JSON.stringify(S.manuals));
+  }catch(e){
+    fld.shapes=S.shapes; fld.manuals=S.manuals;
+  }
   fld.pxPerM=S.pxPerM; fld.calibrated=S.calibrated;
   fld.cp1=S.cp1; fld.cp2=S.cp2;
   fld.pan={...S.pan}; fld.zoom=S.zoom;
-  fld.hasBg=S.hasBg;
 }
 
 async function loadFloorState(){
   const fld=getCurrentFloorData();
-  S.pts=[]; S.drawing=false; S.sel=null; S.cp1=null; S.cp2=null; S._pdfSavedThisLoad=false;
+  S.pts=[]; S.drawing=false; S.sel=null; S.cp1=null; S.cp2=null;
+  S._pdfSavedThisLoad=false;
+  S._origPdfW=0; S._origPdfH=0;
+
   if(!fld){
     S.shapes=[];S.manuals={};S.pxPerM=100;S.calibrated=false;
     S.pdfOff=null;S.pdfW=0;S.pdfH=0;S.hasBg=false;S.pdfDataUrl=null;
     updateCalibUI(); document.getElementById('nopdf').style.display='';
     return;
   }
-  S.shapes=fld.shapes||[]; S.manuals=fld.manuals||{};
+
   S.pxPerM=fld.pxPerM||100; S.calibrated=!!fld.calibrated;
   S.cp1=fld.cp1||null; S.cp2=fld.cp2||null;
   S.pan={...(fld.pan||{x:0,y:0})}; S.zoom=fld.zoom||1;
-  S.pdfDataUrl=fld.pdfDataUrl||null;
-  S.pdfW=fld.pdfW||0; S.pdfH=fld.pdfH||0;
 
-  // Restore PDF from data URL (fixes sharing issue — image is lossless PNG)
-  if(fld.pdfDataUrl){
+  const origW=fld.origPdfW||fld.pdfW||0;
+  const origH=fld.origPdfH||fld.pdfH||0;
+  S._origPdfW=origW; S._origPdfH=origH;
+
+  // ── Image restoration priority ───────────────────────────────────
+  // 1st: CANVAS_STORE  → full original resolution, zero quality loss
+  // 2nd: pdfDataUrl    → compressed fallback (page-reload only)
+  const cachedCanvas=CANVAS_STORE[canvasKey()];
+  if(cachedCanvas){
+    // Use the exact same canvas that was uploaded — no decode/encode cycle
+    S.pdfOff=cachedCanvas;
+    S.pdfW=origW||cachedCanvas.width;
+    S.pdfH=origH||cachedCanvas.height;
+    S.hasBg=true;
+    S.pdfDataUrl=fld.pdfDataUrl||null;
+    S._pdfSavedThisLoad=true; // already saved, don't re-compress
+  } else if(fld.pdfDataUrl){
+    // Fallback: decode compressed image from localStorage.
+    // We CANNOT upscale to origW/H (that caused blur).
+    // Instead, render at the compressed image's natural size,
+    // then fix S.pdfW/H so measurements match the calibration.
     const off=await pdfFromDataUrl(fld.pdfDataUrl);
     if(off){
       S.pdfOff=off;
-      S.pdfW=off.width;   // use restored image's actual dimensions
-      S.pdfH=off.height;
+      // S.pdfW/H must equal the calibration-time dimensions so pxPerM is correct.
+      // The canvas is smaller (compressed), so we store the scale factor and
+      // apply it in draw() via a CSS-like transform — but the simpler correct
+      // approach is to set S.pdfW/H = origW/H and let the canvas draw() scale
+      // the image to fill those logical dimensions automatically.
+      S.pdfW=origW||off.width;
+      S.pdfH=origH||off.height;
       S.hasBg=true;
-      S.pdfDataUrl=fld.pdfDataUrl; // keep full-res ref for share generation
-      S._pdfSavedThisLoad=true;    // already saved — don't re-compress on next save
-    }else{S.pdfOff=null;S.hasBg=false;}
-  } else {
+      S.pdfDataUrl=fld.pdfDataUrl;
+      // Store so subsequent floor switches in this session are crisp
+      CANVAS_STORE[canvasKey()]=off;
+      S._pdfSavedThisLoad=true;
+    }else{
+      S.pdfOff=null; S.hasBg=false; S.pdfDataUrl=null; S.pdfW=0; S.pdfH=0;
+    }
+  }else{
     S.pdfOff=null; S.hasBg=fld.hasBg||false; S.pdfDataUrl=null;
+    S.pdfW=0; S.pdfH=0;
+  }
+
+  try{
+    S.shapes=JSON.parse(JSON.stringify(fld.shapes||[]));
+    S.manuals=JSON.parse(JSON.stringify(fld.manuals||{}));
+  }catch(e){
+    S.shapes=[...(fld.shapes||[])];
+    S.manuals=Object.assign({},fld.manuals||{});
   }
 
   updateCalibUI();
@@ -1003,13 +1070,20 @@ function getFlrStatus(flrData,itemId){
   if(m&&m.stSet)return m.status;
   const p=getFlrPct(flrData,itemId);return p>=0.999?'G':p>0?'Y':'R';
 }
-/** Building-level average % for item across all floors */
+/** Building-level average % for item across ONLY its assigned floors.
+ *  item.floors = array of floor names where this item applies.
+ *  If item.floors is empty or undefined, item applies to ALL floors (backward compat). */
 function getBldAvgPct(bld,itemId,activeName,liveShapes,liveManuals){
-  const floorNames=Object.keys(bld.floors||{});
-  if(!floorNames.length)return 0;
-  const pcts=floorNames.map(fn=>{
+  const allFloorNames=Object.keys(bld.floors||{});
+  if(!allFloorNames.length)return 0;
+  // Find the item definition to get its floor assignment
+  const itemDef=(bld.items||[]).find(i=>i.id===itemId);
+  const assignedFloors=(itemDef?.floors&&itemDef.floors.length)
+    ? itemDef.floors.filter(fn=>bld.floors[fn]) // only floors that exist
+    : allFloorNames; // no assignment = applies to all floors
+  if(!assignedFloors.length)return 0;
+  const pcts=assignedFloors.map(fn=>{
     if(fn===activeName&&liveShapes!==undefined){
-      // Use live S state for active floor
       const m=(liveManuals||{})[itemId];
       if(m&&m.pctSet)return m.pct;
       const linked=(liveShapes||[]).filter(s=>s.rowKey===itemId);
@@ -1023,6 +1097,13 @@ function getBldAvgPct(bld,itemId,activeName,liveShapes,liveManuals){
 function getBldAvgStatus(bld,itemId,activeName,liveShapes,liveManuals){
   const p=getBldAvgPct(bld,itemId,activeName,liveShapes,liveManuals);
   return p>=0.999?'G':p>0?'Y':'R';
+}
+
+/** Returns true if item is assigned to the current floor.
+ *  If item.floors is empty/undefined, item applies everywhere. */
+function isItemOnCurrentFloor(item){
+  if(!item.floors||!item.floors.length)return true; // no restriction = all floors
+  return item.floors.includes(APP.currentFloor);
 }
 
 function getBldOverallDot(bld){
@@ -1174,13 +1255,23 @@ async function renderPdfPage(){
   const off=document.createElement('canvas');off.width=vp.width;off.height=vp.height;
   await page.render({canvasContext:off.getContext('2d'),viewport:vp}).promise;
   S.pdfOff=off;S.pdfW=vp.width;S.pdfH=vp.height;S.hasBg=true;
-  // Store full-res PNG immediately — this is the lossless source for sharing
-  S.pdfDataUrl=S.pdfOff.toDataURL('image/png');
-  S._pdfSavedThisLoad=false; // allow save on next saveFloorState
+  S._origPdfW=vp.width; S._origPdfH=vp.height;
+  // ── Save full-res canvas to in-memory store immediately ───────────
+  // Floor switches within this session will read from here — no decode cycle.
+  CANVAS_STORE[canvasKey()]=off;
+  S._pdfSavedThisLoad=false; // allow compressPdf on next saveFloorState
+  S.pdfDataUrl=null; // will be set by compressPdf in saveFloorState
   const fld=getCurrentFloorData();
-  if(fld){fld.pdfDataUrl=S.pdfDataUrl;fld.pdfW=vp.width;fld.pdfH=vp.height;fld.hasBg=true;}
+  if(fld){
+    fld.origPdfW=vp.width; fld.origPdfH=vp.height;
+    fld.pdfDataUrl=compressPdf(); // store compressed for localStorage / sharing
+    fld.pdfW=vp.width; fld.pdfH=vp.height;
+    fld.hasBg=true;
+    S._pdfSavedThisLoad=true;
+    S.pdfDataUrl=fld.pdfDataUrl;
+  }
   fitView();
-  hint(`PDF loaded for ${APP.currentBuilding} · ${APP.currentFloor}. Calibrate scale then draw shapes.`);
+  hint('PDF loaded for '+APP.currentBuilding+' · '+APP.currentFloor+'. Calibrate scale then draw shapes.');
   renderFloorTabs();
 }
 async function gotoPage(d){
@@ -1217,11 +1308,19 @@ function loadDemo(){
   c.strokeStyle='#1e3a5f';c.lineWidth=4;c.strokeRect(M,M,1080,680);
   S.pdfOff=off;S.pdfW=W;S.pdfH=H;S.hasBg=true;
   S.pxPerM=1080/80;S.calibrated=true;
-  // Full-res PNG — lossless source
-  S.pdfDataUrl=S.pdfOff.toDataURL('image/png');
+  S._origPdfW=W; S._origPdfH=H;
+  // Save to in-memory store — floor switches stay crisp
+  CANVAS_STORE[canvasKey()]=off;
   S._pdfSavedThisLoad=false;
   const fld=getCurrentFloorData();
-  if(fld){fld.pdfDataUrl=S.pdfDataUrl;fld.pdfW=W;fld.pdfH=H;fld.hasBg=true;}
+  if(fld){
+    fld.origPdfW=W; fld.origPdfH=H;
+    fld.pdfDataUrl=compressPdf();
+    fld.pdfW=W; fld.pdfH=H;
+    fld.hasBg=true;
+    S._pdfSavedThisLoad=true;
+    S.pdfDataUrl=fld.pdfDataUrl;
+  }
   updateCalibUI();fitView();
   hint('Demo loaded (80m×60m). Draw shapes or set progress % in the CSA list!');
   renderFloorTabs();
@@ -1675,121 +1774,121 @@ function renderCSA(){
   const floorNames=Object.keys(bld.floors||{});
 
   const enriched=items.map(item=>{
+    const onThisFloor=isItemOnCurrentFloor(item); // respects item.floors assignment
     const avgPct=getBldAvg(item.id);
     const avgSt=getBldAvgSt(item.id);
-    const flrPct=getEffPct(item.id);           // current floor effective %
-    const flrSt=getEffSt(item.id);             // current floor effective status
+    const flrPct=getEffPct(item.id); // current floor effective %
+    const flrSt=getEffSt(item.id);  // current floor effective status
     const manualFlr=isManual(item.id);
-    // "Has data on this floor" = linked shapes OR a manual override set on this floor
     const hasShapes=S.shapes.some(s=>s.rowKey===item.id);
-    const hasFloorData=hasShapes||manualFlr;   // item is relevant to the current floor
-    return{...item,avgPct,avgSt,flrPct,flrSt,manualFlr,hasShapes,hasFloorData};
+    // "Has floor data" = shapes linked on this floor OR manual override on this floor
+    const hasFloorData=hasShapes||manualFlr;
+    return{...item,avgPct,avgSt,flrPct,flrSt,manualFlr,hasShapes,hasFloorData,onThisFloor};
   });
 
-  // ── STRICT FLOOR FILTERING ───────────────────────────────────────
-  // ALL  → show every item (but dim those with no data on this floor)
-  // G/Y/R → filter by *current floor* status AND require floor relevance
+  // STRICT FLOOR FILTERING
+  // Items not assigned to this floor are hidden entirely (onThisFloor=false)
+  // ALL  → show items assigned to this floor; unassigned ones are muted
+  // G/Y/R → show only assigned items with matching floor status that have floor data
   let filtered;
   if(S.filter==='all'){
-    filtered=enriched; // show everything; irrelevant items are visually muted below
+    // Show floor-assigned items normally; show unassigned items muted
+    filtered=enriched;
   }else{
-    // Only show items whose current-floor status matches AND that have floor data
-    filtered=enriched.filter(i=>i.hasFloorData && i.flrSt===S.filter);
+    filtered=enriched.filter(function(i){
+      return i.onThisFloor && i.hasFloorData && i.flrSt===S.filter;
+    });
   }
   if(!filtered.length){
-    el.innerHTML=`<div class="empty">No items ${S.filter==='all'?'':'with status <strong>${S.filter==='G'?'Done':S.filter==='Y'?'Active':'Behind'}</strong> '}on floor <strong>${APP.currentFloor||'—'}</strong>.</div>`;
+    // Safe string concatenation — no nested template literals
+    var filterLabel='';
+    if(S.filter==='G') filterLabel=' with status Done';
+    else if(S.filter==='Y') filterLabel=' with status Active';
+    else if(S.filter==='R') filterLabel=' with status Behind';
+    el.innerHTML='<div class="empty">No items'+filterLabel+' on floor <strong>'+(APP.currentFloor||'—')+'</strong>.</div>';
     return;
   }
 
   el.innerHTML=filtered.map(item=>{
     const linked=S.shapes.filter(s=>s.rowKey===item.id);
     const isSel=S.sel?.rowKey===item.id;
-
-    // ── Floor-primary bar: shows THIS floor's % ──────────────────────
     const flrPctPx=Math.round(item.flrPct*100);
     const avgPctPx=Math.round(item.avgPct*100);
-
     const manualObj=S.manuals[item.id]||{};
     const inputVal=manualObj.pctSet?Math.round(manualObj.pct*100):'';
     const inputPH=item.hasShapes?Math.round(item.flrPct*100)+' (calc)':'0';
-
-    // Bar color driven by floor status; purple if manual, blue if shape-calc
+    // Bar uses floor status; purple=manual, blue=shape-calc
     const barClass=item.manualFlr?'bM':(item.hasShapes&&!item.manualFlr?'bC':('b'+item.flrSt));
-
     const gA=item.flrSt==='G'?'active':'';
     const yA=item.flrSt==='Y'?'active':'';
     const rA=item.flrSt==='R'?'active':'';
+    // Items not assigned to this floor → very muted; assigned but no data → lightly muted
+    const notOnFloor=!item.onThisFloor;
+    const muteStyle=notOnFloor?'opacity:.3;':(S.filter==='all'&&!item.hasFloorData?'opacity:.45;':'');
 
-    // Mute items with no floor data when ALL filter is active
-    const muted=S.filter==='all'&&!item.hasFloorData;
-    const muteStyle=muted?'opacity:.45;':'';
-
-    // Per-floor breakdown chips
-    const chips=floorNames.map(fn=>{
+    // Per-floor breakdown chips — only render floors that have data for this item
+    const chips=floorNames.map(function(fn){
       const fd=bld.floors[fn];
-      const fp=fn===APP.currentFloor?item.flrPct:getFlrPct(fd,item.id);
+      const isActive=fn===APP.currentFloor;
+      const fp=isActive?item.flrPct:getFlrPct(fd,item.id);
+      const flrHasData=isActive?item.hasFloorData:
+        ((fd.shapes||[]).some(function(s){return s.rowKey===item.id;})||
+         !!(fd.manuals&&fd.manuals[item.id]));
+      if(!flrHasData&&!isActive)return''; // skip floors with no data
       const fpPct=Math.round(fp*100);
       const fst=fp>=0.999?'G':fp>0?'Y':'R';
-      const isActive=fn===APP.currentFloor;
-      // Only show chip if floor has data (shapes or manuals) or it is the active floor
-      const flrHasData=isActive
-        ? item.hasFloorData
-        : ((fd.shapes||[]).some(s=>s.rowKey===item.id)||(fd.manuals&&fd.manuals[item.id]));
-      if(!flrHasData&&!isActive)return''; // skip empty floors in chips
-      return `<span class="flr-chip ${fst}${isActive?' active-flr':''}" onclick="switchFloor('${fn.replace(/'/g,"\\'")}');event.stopPropagation()" title="${fn}: ${fpPct}%">
-        <span class="flr-chip-dot"></span>${fn}: ${fpPct}%
-      </span>`;
+      return '<span class="flr-chip '+fst+(isActive?' active-flr':'')+
+        '" onclick="switchFloor(\''+fn.replace(/'/g,"\\'")+'\')'+ // safe quote escaping
+        ';event.stopPropagation()" title="'+fn+': '+fpPct+'%">'+
+        '<span class="flr-chip-dot"></span>'+fn+': '+fpPct+'%</span>';
     }).join('');
 
-    return `<div class="ci${item.hasShapes?' lnk':''}${isSel?' sel':''}${item.manualFlr?' manual-mode':''}" style="${muteStyle}" onclick="clickCSA('${item.id}')">
-      <div class="cih">
-        <span class="cid">${item.id}</span>
-        <!-- Dot = current FLOOR status, not building avg -->
-        <div class="dot d${item.flrSt}" title="Floor status: ${item.flrSt}"></div>
-        <span class="cdesc">${item.desc}</span>
-        ${linked.length?`<span class="badge">${linked.length}⊕</span>`:''}
-        ${item.manualFlr?`<span class="badge-m">M</span>`:''}
-        ${muted?`<span style="font-size:7px;color:var(--text3);margin-left:auto">no data this floor</span>`:''}
-      </div>
-
-      <!-- Primary bar = THIS FLOOR'S % -->
-      <div class="bar-wrap">
-        <div class="bar"><div class="bfill ${barClass}" style="width:${flrPctPx}%"></div></div>
-        <span class="bpct" style="${item.manualFlr?'color:var(--purple)':''}">${flrPctPx}%</span>
-      </div>
-      <div style="font-size:8px;color:var(--text3);margin-bottom:2px;display:flex;align-items:center;gap:6px">
-        <span>this floor</span>
-        <span style="color:var(--border2)">|</span>
-        <span>bldg avg: <strong style="color:var(--text2)">${avgPctPx}%</strong></span>
-      </div>
-
-      <!-- Per-floor breakdown chips (only floors with data + active floor) -->
-      ${chips?`<div class="flr-breakdown">${chips}</div>`:''}
-
-      <!-- Current floor edit row -->
-      <div class="edit-row" onclick="event.stopPropagation()">
-        <span class="flr-edit-label">${APP.currentFloor||'—'}</span>
-        <div class="pct-wrap">
-          <input class="pct-inp${manualObj.pctSet?' is-manual':''}" type="number" min="0" max="100" step="1"
-            value="${inputVal}" placeholder="${inputPH}"
-            title="Override % for current floor (${APP.currentFloor})"
-            onchange="setManualPct('${item.id}',this.value)">
-          <span class="pct-sym">%</span>
-        </div>
-        <div class="st-grp">
-          <button class="st-btn sG ${gA}" onclick="setManualSt('${item.id}','G')">G</button>
-          <button class="st-btn sY ${yA}" onclick="setManualSt('${item.id}','Y')">Y</button>
-          <button class="st-btn sR ${rA}" onclick="setManualSt('${item.id}','R')">R</button>
-        </div>
-        ${item.manualFlr
-          ?`<button class="auto-btn" onclick="clearManual('${item.id}')">↺</button>`
-          :`<span class="calc-hint">${item.hasShapes?'📐':'type'}</span>`}
-      </div>
-      <div class="cmeta" style="margin-top:3px">
-        <span>฿${Number(item.amt).toLocaleString()}</span>
-        <span>${item.wt.toFixed(2)}% wt</span>
-      </div>
-    </div>`;
+    return '<div class="ci'+(item.hasShapes?' lnk':'')+(isSel?' sel':'')+(item.manualFlr?' manual-mode':'')+
+      '" style="'+muteStyle+'" onclick="clickCSA(\''+item.id+'\')">'+
+      '<div class="cih">'+
+        '<span class="cid">'+item.id+'</span>'+
+        // Status dot = CURRENT FLOOR status
+        '<div class="dot d'+item.flrSt+'" title="Floor: '+item.flrSt+'"></div>'+
+        '<span class="cdesc">'+item.desc+'</span>'+
+        (linked.length?'<span class="badge">'+linked.length+'⊕</span>':'')+
+        (item.manualFlr?'<span class="badge-m">M</span>':'')+
+        (notOnFloor?'<span style="font-size:7px;color:var(--text3);margin-left:auto;padding:1px 4px;border:1px solid var(--border2);border-radius:3px">other floors</span>':
+          (S.filter==='all'&&!item.hasFloorData?'<span style="font-size:7px;color:var(--text3);margin-left:auto">no data</span>':''))+
+      '</div>'+
+      // Primary bar = THIS FLOOR's %
+      '<div class="bar-wrap">'+
+        '<div class="bar"><div class="bfill '+barClass+'" style="width:'+flrPctPx+'%"></div></div>'+
+        '<span class="bpct" style="'+(item.manualFlr?'color:var(--purple)':'')+'">'+flrPctPx+'%</span>'+
+      '</div>'+
+      '<div style="font-size:8px;color:var(--text3);margin-bottom:2px">'+
+        'this floor &nbsp;|&nbsp; bldg avg: <strong style="color:var(--text2)">'+avgPctPx+'%</strong>'+
+      '</div>'+
+      (chips?'<div class="flr-breakdown">'+chips+'</div>':'')+
+      // Current floor edit row
+      '<div class="edit-row" onclick="event.stopPropagation()">'+
+        '<span class="flr-edit-label">'+(APP.currentFloor||'—')+'</span>'+
+        '<div class="pct-wrap">'+
+          '<input class="pct-inp'+(manualObj.pctSet?' is-manual':'')+
+            '" type="number" min="0" max="100" step="1"'+
+            ' value="'+inputVal+'" placeholder="'+inputPH+'"'+
+            ' title="Override % for current floor ('+APP.currentFloor+')"'+
+            ' onchange="setManualPct(\''+item.id+'\',this.value)">'+
+          '<span class="pct-sym">%</span>'+
+        '</div>'+
+        '<div class="st-grp">'+
+          '<button class="st-btn sG '+gA+'" onclick="setManualSt(\''+item.id+'\',\'G\')">G</button>'+
+          '<button class="st-btn sY '+yA+'" onclick="setManualSt(\''+item.id+'\',\'Y\')">Y</button>'+
+          '<button class="st-btn sR '+rA+'" onclick="setManualSt(\''+item.id+'\',\'R\')">R</button>'+
+        '</div>'+
+        (item.manualFlr
+          ?'<button class="auto-btn" onclick="clearManual(\''+item.id+'\')">↺</button>'
+          :'<span class="calc-hint">'+(item.hasShapes?'📐':'type')+'</span>')+
+      '</div>'+
+      '<div class="cmeta" style="margin-top:3px">'+
+        '<span>฿'+Number(item.amt).toLocaleString()+'</span>'+
+        '<span>'+item.wt.toFixed(2)+'% wt</span>'+
+      '</div>'+
+    '</div>';
   }).join('');
 }
 
@@ -1895,10 +1994,10 @@ function copyCSV(){navigator.clipboard.writeText(buildCSV()).then(()=>alert('CSV
 function dlCSV(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buildCSV()],{type:'text/csv'}));a.download=`ryg_${APP.cp?.name||'report'}.csv`;a.click();}
 
 // ══════════════════════════════════════════════════════════════════
-// SHARE  — full-resolution PNG per floor for complete, crisp reproduction
+// SHARE  — full-resolution images embedded per floor
 // ══════════════════════════════════════════════════════════════════
 function buildSharePayload(){
-  saveFloorState(); // sync live state into project data
+  saveFloorState();
   const proj=APP.cp;if(!proj)return null;
   return {v:5, project:{
     id:proj.id, name:proj.name, created:proj.created, modified:proj.modified,
@@ -1907,20 +2006,27 @@ function buildSharePayload(){
       items:b.items,
       activeFloor:b.activeFloor,
       floors:Object.fromEntries(Object.entries(b.floors).map(([fn,fd])=>{
-        // ── Hi-res image capture ─────────────────────────────────────
-        // For the active floor: use S.pdfDataUrl (full-res PNG stored at load time).
-        // For other floors: use captureHiResPdf which returns the stored data URL as-is.
-        const isActiveFl=(k===APP.currentBuilding&&fn===APP.currentFloor);
-        const hiResPdfUrl=isActiveFl
-          ? (S.pdfDataUrl||captureHiResPdf(fd))  // S.pdfDataUrl = full-res PNG from last render
-          : captureHiResPdf(fd);
+        // For share: prefer full-res from CANVAS_STORE, fallback to stored compressed
+        const ck=proj.id+'::'+k+'::'+fn;
+        const cachedCvs=CANVAS_STORE[ck];
+        let imgUrl=null;
+        if(cachedCvs){
+          // Full-resolution PNG directly from in-memory canvas — zero quality loss
+          imgUrl=cachedCvs.toDataURL('image/png');
+        }else{
+          // Fallback: whatever was stored in localStorage (compressed)
+          imgUrl=fd.pdfDataUrl||null;
+        }
         return [fn,{
           shapes:fd.shapes||[], manuals:fd.manuals||{},
           pxPerM:fd.pxPerM||100, calibrated:!!fd.calibrated,
           cp1:fd.cp1||null, cp2:fd.cp2||null,
           pan:fd.pan||{x:0,y:0}, zoom:fd.zoom||1,
-          pdfDataUrl:hiResPdfUrl,               // ← full-res PNG (lossless)
-          pdfW:fd.pdfW||0, pdfH:fd.pdfH||0
+          pdfDataUrl:imgUrl,
+          pdfW:fd.origPdfW||fd.pdfW||0,   // always original dimensions
+          pdfH:fd.origPdfH||fd.pdfH||0,
+          origPdfW:fd.origPdfW||fd.pdfW||0,
+          origPdfH:fd.origPdfH||fd.pdfH||0
         }];
       }))
     }]))
@@ -1928,27 +2034,21 @@ function buildSharePayload(){
 }
 function encodePayload(p){return btoa(unescape(encodeURIComponent(JSON.stringify(p))));}
 function generateShare(){
-  shareMsg('Generating — embedding full-resolution floor plans…','var(--text3)');
-  // Run async so the UI updates before the potentially heavy encoding
-  setTimeout(()=>{
+  shareMsg('Generating share code…','var(--text3)');
+  setTimeout(function(){
     const payload=buildSharePayload();
     if(!payload){shareMsg('No project to share.','var(--red)');return;}
     const code=encodePayload(payload);
     document.getElementById('shareOut').value=code;
     document.getElementById('copyShareBtn').disabled=false;
-
-    // Build the share URL.  Browsers support up to ~8000 chars in a hash;
-    // for large floor plans the URL may exceed this — we warn the user but
-    // still provide the full code for copy-paste sharing.
+    // URL share — warn if too large for hash
     const url=window.location.href.split('#')[0]+'#share='+code;
     const urlOk=url.length<7500;
-    document.getElementById('shareUrlBox').value=urlOk?url:'(Code too large for URL — use Copy Code instead)';
+    document.getElementById('shareUrlBox').value=urlOk?url:'(Too large for URL — use Copy Code)';
     document.getElementById('copyLinkBtn').disabled=!urlOk;
-
-    // Show payload size info
     const kb=Math.round(code.length*0.75/1024);
-    const qualityNote=`✓ Full-resolution floor plans embedded (${kb} KB). ${urlOk?'URL and code ready.':'Use Copy Code — too large for URL.'}`;
-    shareMsg(qualityNote,'var(--green)');
+    shareMsg('✓ Ready — '+kb+' KB'+(urlOk?' · URL and code available':' · Use Copy Code (URL too large)'),
+      'var(--green)');
   },0);
 }
 function copyShareCode(){
@@ -2041,7 +2141,11 @@ function switchSetTab(t){
   });
   if(t==='bld')renderSetBldList();
   if(t==='flr'){if(!setFlrBld){setFlrBld=APP.currentBuilding||Object.keys(APP.cp?.buildings||{})[0]||null;}renderSetFlrBldPills();renderSetFlrList();}
-  if(t==='items'){if(!setItemBld){setItemBld=APP.currentBuilding||Object.keys(APP.cp?.buildings||{})[0]||null;}renderSetItemBldPills();renderItemList();}
+  if(t==='items'){
+    if(!setItemBld){setItemBld=APP.currentBuilding||Object.keys(APP.cp?.buildings||{})[0]||null;}
+    _itemFormFloors=[];
+    renderSetItemBldPills();renderItemList();renderItemFlrPills();
+  }
 }
 
 /* Buildings */
@@ -2156,31 +2260,75 @@ function renderSetItemBldPills(){
     `<span class="pill${n===setItemBld?' on':''}" onclick="setItemBld='${n.replace(/'/g,"\\'")}';renderSetItemBldPills();renderItemList()">${n} <span style="opacity:.5;font-size:9px">${(proj.buildings[n].items||[]).length}</span></span>`
   ).join('');
   renderItemList();
+  renderItemFlrPills(); // update floor picker when building changes
 }
 function renderItemList(){
   const proj=APP.cp;if(!proj||!setItemBld)return;
   document.getElementById('setItemSheet').textContent=setItemBld||'—';
   const items=proj.buildings[setItemBld]?.items||[];
+  const floorNames=Object.keys(proj.buildings[setItemBld]?.floors||{});
   document.getElementById('setItemCount').textContent=items.length?`${items.length} items`:'';
   const el=document.getElementById('itemList');
   if(!items.length){el.innerHTML='<div class="empty" style="padding:10px">No items. Add one below.</div>';return;}
-  el.innerHTML=items.map(item=>`<div class="set-row">
-    <span class="set-row-id">${item.id}</span>
-    <span class="set-row-desc">${item.desc}</span>
-    <span style="font-size:9px;color:var(--text3);min-width:80px;text-align:right">${item.amt?'฿'+Number(item.amt).toLocaleString():''}</span>
-    <span style="font-size:9px;color:var(--text3);min-width:44px;text-align:right">${item.wt.toFixed(2)}%</span>
-    <button class="set-edit" onclick="editItem('${item.id}')">Edit</button>
-    <button class="set-del" onclick="deleteItem('${item.id}')">✕</button>
-  </div>`).join('');
+  el.innerHTML=items.map(item=>{
+    const assignedFloors=item.floors&&item.floors.length?item.floors:[];
+    const flrLabel=assignedFloors.length
+      ? assignedFloors.map(f=>`<span class="item-flr-tag">${f}</span>`).join('')
+      : `<span class="item-flr-tag" style="background:var(--abc);color:var(--accent);border-color:var(--abd)">All floors</span>`;
+    return `<div class="set-row" style="flex-wrap:wrap">
+      <span class="set-row-id">${item.id}</span>
+      <div style="flex:1;min-width:0">
+        <div class="set-row-desc">${item.desc}</div>
+        <div class="item-flr-tags">${flrLabel}</div>
+      </div>
+      <span style="font-size:9px;color:var(--text3);min-width:80px;text-align:right">${item.amt?'฿'+Number(item.amt).toLocaleString():''}</span>
+      <span style="font-size:9px;color:var(--text3);min-width:44px;text-align:right">${item.wt.toFixed(2)}%</span>
+      <button class="set-edit" onclick="editItem('${item.id}')">Edit</button>
+      <button class="set-del" onclick="deleteItem('${item.id}')">✕</button>
+    </div>`;
+  }).join('');
 }
+// Tracked selected floors in the item form (array of floor names)
+let _itemFormFloors=[];
+
+function renderItemFlrPills(){
+  const el=document.getElementById('itemFlrPills');if(!el)return;
+  const proj=APP.cp;if(!proj||!setItemBld){el.innerHTML='<span style="font-size:9px;color:var(--text3);font-style:italic">Select a building first</span>';return;}
+  const floorNames=Object.keys(proj.buildings[setItemBld]?.floors||{});
+  if(!floorNames.length){el.innerHTML='<span style="font-size:9px;color:var(--text3)">No floors defined</span>';return;}
+  // "All floors" toggle — active when _itemFormFloors is empty
+  const allOn=_itemFormFloors.length===0;
+  let html='<span class="flr-assign-pill all-pill'+(allOn?' on':'')+'" onclick="toggleItemFlrAll()" title="Item applies to all floors">All floors</span>';
+  floorNames.forEach(fn=>{
+    const on=_itemFormFloors.includes(fn);
+    html+='<span class="flr-assign-pill'+(on?' on':'')+'" onclick="toggleItemFlr(\''+fn.replace(/'/g,"\\'")+'\')">'+fn+'</span>';
+  });
+  el.innerHTML=html;
+}
+function toggleItemFlrAll(){
+  _itemFormFloors=[];renderItemFlrPills();
+}
+function toggleItemFlr(fn){
+  const idx=_itemFormFloors.indexOf(fn);
+  if(idx>=0)_itemFormFloors.splice(idx,1);
+  else _itemFormFloors.push(fn);
+  renderItemFlrPills();
+}
+
 function editItem(id){
   const items=APP.cp?.buildings[setItemBld]?.items||[];
   const item=items.find(i=>i.id===id);if(!item)return;
   setEditItemId=id;
-  document.getElementById('newItemId').value=item.id;document.getElementById('newItemDesc').value=item.desc;
-  document.getElementById('newItemAmt').value=item.amt||'';document.getElementById('newItemWt').value=item.wt;
+  document.getElementById('newItemId').value=item.id;
+  document.getElementById('newItemDesc').value=item.desc;
+  document.getElementById('newItemAmt').value=item.amt||'';
+  document.getElementById('newItemWt').value=item.wt;
+  // Load floor assignment into form state
+  _itemFormFloors=item.floors?[...item.floors]:[];
+  renderItemFlrPills();
   document.getElementById('addItemBtn').textContent='💾 Save';
-  document.getElementById('itemFormMsg').textContent='Editing '+id;document.getElementById('itemFormMsg').style.color='var(--accent)';
+  document.getElementById('itemFormMsg').textContent='Editing '+id;
+  document.getElementById('itemFormMsg').style.color='var(--accent)';
 }
 function saveItem(){
   const proj=APP.cp;if(!proj||!setItemBld){document.getElementById('itemFormMsg').textContent='Select a building first.';return;}
@@ -2190,23 +2338,28 @@ function saveItem(){
   const wt=parseFloat(document.getElementById('newItemWt').value)||0;
   if(!id||!desc){document.getElementById('itemFormMsg').textContent='ID and Description required.';document.getElementById('itemFormMsg').style.color='var(--red)';return;}
   const bld=proj.buildings[setItemBld];const items=bld.items;
+  // floors: empty array = all floors; otherwise specific list
+  const floors=[..._itemFormFloors];
   if(setEditItemId){
     const idx=items.findIndex(i=>i.id===setEditItemId);
     if(idx>=0){
       if(id!==setEditItemId){
-        // Update rowKeys in all floors of this building
         Object.values(bld.floors).forEach(f=>(f.shapes||[]).forEach(s=>{if(s.rowKey===setEditItemId)s.rowKey=id;}));
         Object.values(bld.floors).forEach(f=>{if((f.manuals||{})[setEditItemId]){f.manuals[id]=f.manuals[setEditItemId];delete f.manuals[setEditItemId];}});
         if(setItemBld===APP.currentBuilding){S.shapes.forEach(s=>{if(s.rowKey===setEditItemId)s.rowKey=id;});if(S.manuals[setEditItemId]){S.manuals[id]=S.manuals[setEditItemId];delete S.manuals[setEditItemId];}}
       }
-      items[idx]={id,desc,amt,wt};
+      items[idx]={id,desc,amt,wt,floors};
     }
   }else{
     if(items.some(i=>i.id===id)){document.getElementById('itemFormMsg').textContent=`ID "${id}" already exists.`;document.getElementById('itemFormMsg').style.color='var(--red)';return;}
-    items.push({id,desc,amt,wt});
+    items.push({id,desc,amt,wt,floors});
   }
-  setEditItemId=null;['newItemId','newItemDesc','newItemAmt','newItemWt'].forEach(k=>document.getElementById(k).value='');
-  document.getElementById('addItemBtn').textContent='+ Add';document.getElementById('itemFormMsg').textContent='';
+  // Reset form
+  setEditItemId=null;_itemFormFloors=[];
+  ['newItemId','newItemDesc','newItemAmt','newItemWt'].forEach(k=>document.getElementById(k).value='');
+  document.getElementById('addItemBtn').textContent='+ Add';
+  document.getElementById('itemFormMsg').textContent='';
+  renderItemFlrPills();
   renderItemList();renderCSA();refreshShapes();draw();saveProjects();
 }
 function deleteItem(id){
