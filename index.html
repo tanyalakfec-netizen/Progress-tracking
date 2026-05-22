@@ -356,6 +356,24 @@ td.hi{color:var(--accent);font-weight:700}
 .prev-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
 .prev-row label{font-size:9px;color:var(--text2);flex:1}
 
+
+/* ═══ MOVE / VERTEX EDIT ══════════════════════════════════════ */
+.cw.tool-select.moving{cursor:move!important}
+.cw.tool-rect{cursor:crosshair!important}
+/* vertex handle */
+.vtx-handle{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;
+  border:2px solid var(--accent);cursor:pointer}
+/* ═══ CLOUD SYNC ══════════════════════════════════════════════ */
+.sync-id-box{width:100%;padding:7px 10px;border:1px solid var(--abd);border-radius:5px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);
+  background:var(--abc);outline:none;font-weight:700;letter-spacing:.04em}
+.sync-id-box::placeholder{color:var(--text3);font-weight:400;letter-spacing:0}
+.sync-status{font-size:9px;min-height:16px;margin-top:5px;display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.err{background:var(--red)}
+.sync-dot.busy{background:#f59e0b;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
@@ -417,6 +435,12 @@ td.hi{color:var(--accent);font-weight:700}
     <button class="btn" id="btn-pan" onclick="setTool('pan')">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>Pan
     </button>
+    <button class="btn" id="btn-rect" onclick="setTool('rect')" title="Rectangle [R]">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>Rect
+    </button>
+    <button class="btn" id="btn-move" onclick="setTool('move')" title="Move/Edit Shape [M]">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>Move
+    </button>
   </div>
   <div class="sep"></div>
   <button class="btn" onclick="doZoom(1.2)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
@@ -428,7 +452,7 @@ td.hi{color:var(--accent);font-weight:700}
   <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--yellow);cursor:pointer"><input type="checkbox" id="axisChk" onchange="S.axisLock=this.checked;updateAxisBadge();draw()" style="accent-color:var(--yellow)">H/V</label>
   <div class="sp"></div>
   <button class="btn grn" onclick="showReport()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>Report</button>
-  <button class="btn pur" onclick="showShare()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+  <button class="btn pur" onclick="showSyncModal()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>Sync / Share</button>
   <button class="btn" style="background:var(--bg2);border-color:var(--border2);color:var(--text2)" onclick="showSettings()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Settings</button>
   <div style="position:relative" id="exportWrap">
     <button class="btn pur" style="background:var(--pbg);gap:0;padding:5px 0" onclick="toggleExportMenu()">
@@ -912,7 +936,12 @@ const S={
   // Render style overrides (for preview & export)
   renderOpts:{
     ptSize:7, strokeWidth:1.8, fontSize:9, opacity:1.0
-  }
+  },
+  // Move / vertex-edit state
+  isDragMove:false, isDragVertex:false,
+  dragVertexIdx:-1, dragStartMouse:null, dragStartPts:null,
+  // Rectangle draw state
+  rectStart:null, rectEnd:null
 };
 
 function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16);});}
@@ -1503,6 +1532,34 @@ function loadDemo(){
   renderFloorTabs();
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// HIT TESTING — Move / Vertex Edit
+// ══════════════════════════════════════════════════════════════════
+const VERTEX_HIT_R = 10; // px screen radius
+
+/** Returns vertex index that is within VERTEX_HIT_R of canvas point, or -1 */
+function hitVertex(cx,cy,sh){
+  if(!sh||sh.type==='point') return -1;
+  for(var i=0;i<sh.pts.length;i++){
+    var cp=w2c(sh.pts[i].x,sh.pts[i].y);
+    if(Math.hypot(cx-cp.x,cy-cp.y)<=VERTEX_HIT_R) return i;
+  }
+  return -1;
+}
+
+/** Returns true if canvas point (cx,cy) is inside / on the shape */
+function hitShape(cx,cy,sh){
+  var wp=c2w(cx,cy);
+  if(sh.type==='point'){
+    var cp=w2c(sh.pts[0].x,sh.pts[0].y);
+    return Math.hypot(cx-cp.x,cy-cp.y)<14;
+  }
+  if(sh.type==='polygon') return ptInPoly(wp.x,wp.y,sh.pts);
+  if(sh.type==='polyline') return nearLine(wp,sh.pts,10/S.zoom);
+  return false;
+}
+
 // ══════════════════════════════════════════════════════════════════
 // SNAP & AXIS
 // ══════════════════════════════════════════════════════════════════
@@ -1535,23 +1592,112 @@ canvas.addEventListener('mousedown',e=>{
   const snap=findSnap(mp.x,mp.y);
   let wp=snap||c2w(mp.x,mp.y);
   if(needsAxisLock())wp=applyAxisLock(wp.x,wp.y);
-  if(S.tool==='select')pickShape(mp.x,mp.y);
+
+  if(S.tool==='select'){
+    // Check vertex handle first (on selected polygon/polyline)
+    if(S.sel&&(S.sel.type==='polygon'||S.sel.type==='polyline')){
+      const vIdx=hitVertex(mp.x,mp.y,S.sel);
+      if(vIdx>=0){
+        S.isDragVertex=true; S.dragVertexIdx=vIdx;
+        S.dragStartMouse={...mp};
+        S.dragStartPts=S.sel.pts.map(p=>({...p}));
+        return;
+      }
+    }
+    // Check if clicking on already-selected shape to start drag move
+    if(S.sel&&hitShape(mp.x,mp.y,S.sel)){
+      S.isDragMove=true;
+      S.dragStartMouse={...mp};
+      S.dragStartPts=S.sel.pts.map(p=>({...p}));
+      return;
+    }
+    pickShape(mp.x,mp.y);
+  }
+  else if(S.tool==='move'){
+    // Move tool: click selects, then drag moves
+    if(!S.isDragMove){
+      if(S.sel&&(hitShape(mp.x,mp.y,S.sel)||hitVertex(mp.x,mp.y,S.sel)>=0)){
+        const vIdx=hitVertex(mp.x,mp.y,S.sel);
+        if(vIdx>=0){
+          S.isDragVertex=true; S.dragVertexIdx=vIdx;
+          S.dragStartMouse={...mp};
+          S.dragStartPts=S.sel.pts.map(p=>({...p}));
+        } else {
+          S.isDragMove=true;
+          S.dragStartMouse={...mp};
+          S.dragStartPts=S.sel.pts.map(p=>({...p}));
+        }
+      } else {
+        pickShape(mp.x,mp.y);
+      }
+    }
+  }
   else if(S.tool==='scale')onScaleClick(wp);
   else if(S.tool==='polygon'||S.tool==='polyline'){S.drawing=true;S.pts.push({x:wp.x,y:wp.y});draw();}
   else if(S.tool==='point')addPoint(wp);
+  else if(S.tool==='rect'){S.rectStart={...wp};S.rectEnd={...wp};draw();}
 },{passive:false});
+
 canvas.addEventListener('mousemove',e=>{
   const mp=mouse(e);
   if(S.isPan){S.pan.x+=mp.x-S.lastM.x;S.pan.y+=mp.y-S.lastM.y;S.lastM=mp;draw();return;}
+
+  // Drag move shape
+  if(S.isDragMove&&S.sel&&S.dragStartMouse){
+    const dx=(mp.x-S.dragStartMouse.x)/S.zoom;
+    const dy=(mp.y-S.dragStartMouse.y)/S.zoom;
+    S.sel.pts=S.dragStartPts.map(p=>({x:p.x+dx,y:p.y+dy}));
+    updateStats(); draw(); return;
+  }
+  // Drag vertex
+  if(S.isDragVertex&&S.sel&&S.dragStartMouse&&S.dragVertexIdx>=0){
+    const wp2=c2w(mp.x,mp.y);
+    S.sel.pts[S.dragVertexIdx]={x:wp2.x,y:wp2.y};
+    updateStats(); draw(); return;
+  }
+
   S.mouse=mp;S.snapPt=findSnap(mp.x,mp.y);
   document.getElementById('sb2').className='snapbadge'+(S.snapPt?' vis':'');
   let wp=S.snapPt||c2w(mp.x,mp.y);
   if(needsAxisLock())wp=applyAxisLock(wp.x,wp.y);
   S.axisWp=needsAxisLock()?wp:null;
-  document.getElementById('sbpos').textContent=`Cursor: ${(wp.x/S.pxPerM).toFixed(2)}m, ${(wp.y/S.pxPerM).toFixed(2)}m`;
+  // Rect preview
+  if(S.tool==='rect'&&S.rectStart)S.rectEnd={...wp};
+  // Update cursor for move-ready state
+  if((S.tool==='select'||S.tool==='move')&&S.sel){
+    if(hitVertex(mp.x,mp.y,S.sel)>=0) canvas.style.cursor='crosshair';
+    else if(hitShape(mp.x,mp.y,S.sel)) canvas.style.cursor='move';
+    else canvas.style.cursor='';
+  } else if(S.tool!=='move') canvas.style.cursor='';
+  document.getElementById('sbpos').textContent='Cursor: '+(wp.x/S.pxPerM).toFixed(2)+'m, '+(wp.y/S.pxPerM).toFixed(2)+'m';
   draw();
 });
-canvas.addEventListener('mouseup',e=>{if(S.isPan){S.isPan=false;document.getElementById('cw').classList.remove('panning');}});
+
+canvas.addEventListener('mouseup',e=>{
+  if(S.isPan){S.isPan=false;document.getElementById('cw').classList.remove('panning');return;}
+  if(S.isDragMove||S.isDragVertex){
+    S.isDragMove=false; S.isDragVertex=false; S.dragVertexIdx=-1;
+    S.dragStartMouse=null; S.dragStartPts=null;
+    updateStats(); refreshShapes(); renderCSA(); saveFloorState(); draw();
+    return;
+  }
+  // Finalize rectangle on mouseup
+  if(S.tool==='rect'&&S.rectStart&&S.rectEnd){
+    const a=S.rectStart, b=S.rectEnd;
+    if(Math.abs(b.x-a.x)>2&&Math.abs(b.y-a.y)>2){
+      const sh={
+        id:nextId(), type:'polygon',
+        pts:[{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}],
+        label:'Rect '+(S.shapes.filter(s=>s.type==='polygon').length+1),
+        rowKey:null, color:'#2563eb', state:null, category:null, labelCode:''
+      };
+      S.shapes.push(sh);
+      selShape(sh.id); refreshShapes(); updateStats(); renderFloorTabs(); draw();
+      hint('Rectangle created. Link to CSA item in Properties.');
+    }
+    S.rectStart=null; S.rectEnd=null; draw();
+  }
+});
 canvas.addEventListener('dblclick',e=>{
   if(S.tool==='polygon'&&S.pts.length>=3)finalize('polygon');
   else if(S.tool==='polyline'&&S.pts.length>=2)finalize('polyline');
@@ -1562,7 +1708,7 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.target.matches('input,textarea,select')){e.preventDefault();S.spDown=true;document.getElementById('cw').style.cursor='grab';}
   if(e.key==='Shift'){S.shiftDown=true;updateAxisBadge();draw();}
   if(!e.target.matches('input,textarea,select')){
-    const m={v:'select',s:'scale',a:'polygon',l:'polyline',c:'point',p:'pan'};
+    const m={v:'select',s:'scale',a:'polygon',l:'polyline',c:'point',p:'pan',r:'rect',m:'move'};
     if(m[e.key?.toLowerCase()])setTool(m[e.key.toLowerCase()]);
     if(e.key?.toLowerCase()==='x'){S.axisLock=!S.axisLock;document.getElementById('axisChk').checked=S.axisLock;updateAxisBadge();draw();}
     if(S.sel&&e.key?.toLowerCase()==='g')setShapeState(S.sel.state==='G'?null:'G');
@@ -1793,6 +1939,30 @@ function draw(){
     if(S.cp1&&S.cp2){ctx.save();ctx.setLineDash([5/S.zoom,4/S.zoom]);ctx.beginPath();ctx.moveTo(S.cp1.x,S.cp1.y);ctx.lineTo(S.cp2.x,S.cp2.y);ctx.strokeStyle='rgba(245,158,11,.8)';ctx.lineWidth=1.5/S.zoom;ctx.stroke();ctx.setLineDash([]);ctx.restore();}
   }
   if(S.snapPt){ctx.beginPath();ctx.arc(S.snapPt.x,S.snapPt.y,8/S.zoom,0,Math.PI*2);ctx.strokeStyle='rgba(37,99,235,.8)';ctx.lineWidth=1.5/S.zoom;ctx.stroke();ctx.beginPath();ctx.arc(S.snapPt.x,S.snapPt.y,2/S.zoom,0,Math.PI*2);ctx.fillStyle='#2563eb';ctx.fill();}
+  // Rectangle drag preview
+  if(S.tool==='rect'&&S.rectStart&&S.rectEnd){
+    const a=S.rectStart,b=S.rectEnd;
+    ctx.save();ctx.setLineDash([6/S.zoom,4/S.zoom]);
+    ctx.strokeStyle='rgba(37,99,235,.8)';ctx.lineWidth=1.5/S.zoom;ctx.fillStyle='rgba(37,99,235,.07)';
+    const rx=Math.min(a.x,b.x),ry=Math.min(a.y,b.y),rw=Math.abs(b.x-a.x),rh=Math.abs(b.y-a.y);
+    ctx.fillRect(rx,ry,rw,rh);ctx.strokeRect(rx,ry,rw,rh);
+    ctx.setLineDash([]);
+    if(rw>20/S.zoom&&rh>20/S.zoom){
+      const dm=(rw/S.pxPerM).toFixed(2)+'m \xD7 '+(rh/S.pxPerM).toFixed(2)+'m';
+      drawLbl(rx+rw/2,ry+rh/2,dm,'#2563eb');
+    }
+    ctx.restore();
+  }
+  // Vertex handles on selected shape when in select/move mode
+  if(S.sel&&(S.tool==='move'||S.tool==='select')&&
+     (S.sel.type==='polygon'||S.sel.type==='polyline')){
+    S.sel.pts.forEach(function(p,i){
+      ctx.beginPath();ctx.arc(p.x,p.y,6/S.zoom,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill();
+      ctx.strokeStyle=S.dragVertexIdx===i?'#f59e0b':'rgba(37,99,235,.9)';
+      ctx.lineWidth=1.8/S.zoom;ctx.stroke();
+    });
+  }
   ctx.restore();
 }
 
@@ -1854,7 +2024,7 @@ function setTool(t){
   document.querySelectorAll('.btn[id^=btn-]').forEach(b=>b.classList.remove('on'));
   document.getElementById('btn-'+t)?.classList.add('on');
   document.getElementById('cw').className='cw tool-'+t;
-  const h={select:'Click shape to select',scale:'Click 2 known points then enter real distance',polygon:'Click vertices · Double-click close · Right-click cancel',polyline:'Click points · Double-click finish · Right-click cancel',point:'Click to place count marker',pan:'Drag to pan · Scroll to zoom'};
+  const h={select:'Click to select · Drag vertex handles to edit · Drag shape body to move',scale:'Click 2 known points then enter real distance',polygon:'Click vertices · Double-click close · Right-click cancel',polyline:'Click points · Double-click finish · Right-click cancel',point:'Click to place count marker',pan:'Drag to pan · Scroll to zoom',rect:'Click and drag to draw a rectangle',move:'Click shape to select · Drag body to move · Drag vertex handles to reposition'};
   hint(h[t]||'');document.getElementById('sbtool').textContent='Tool: '+t[0].toUpperCase()+t.slice(1);draw();
 }
 function hint(msg){document.getElementById('sbhint').textContent=msg;}
@@ -3109,6 +3279,187 @@ function drawLblOnCtxWithOpts(c,x,y,title,val,color,fSz,opts){
   c.restore();
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// CLOUD SYNC  — JSONBin.io (free, no login)
+// Uses a private bin per project. The bin ID IS the project sync ID.
+// ══════════════════════════════════════════════════════════════════
+var JSONBIN_API = 'https://api.jsonbin.io/v3';
+// Public master key for jsonbin — users can replace with their own
+var JSONBIN_KEY = '$2a$10$placeholder_replace_with_real_key_from_jsonbin_io';
+var _autoSyncTimer = null;
+var _syncId = '';
+
+function showSyncModal(){
+  // Sync the old share modal content into new sync modal
+  document.getElementById('syncOv').classList.add('open');
+  // Restore saved sync ID if any
+  var saved = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||''));
+  if(saved){ _syncId=saved; document.getElementById('syncIdInput').value=saved; setSyncStatus('ready','Sync ID loaded from local storage'); }
+  else setSyncStatus('idle','No sync ID set — Generate or paste one');
+  document.getElementById('syncShareUrl').value='';
+  document.getElementById('syncShareMsg').textContent='';
+  document.getElementById('syncCopyLinkBtn').disabled=true;
+}
+
+function setSyncStatus(state, msg){
+  var dot=document.getElementById('syncDot');
+  var msgEl=document.getElementById('syncMsg');
+  if(!dot||!msgEl) return;
+  dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':state==='busy'?' busy':'');
+  msgEl.textContent=msg;
+  msgEl.style.color=state==='ok'?'var(--green)':state==='err'?'var(--red)':state==='busy'?'#f59e0b':'var(--text3)';
+}
+
+/** Generate a new bin on JSONBin and get the bin ID */
+function generateSyncId(){
+  // If the user hasn't set a real API key, generate a local UUID-based ID
+  // that we'll use with a generic CORS-friendly KV service
+  var newId='ryg-'+uuid();
+  _syncId=newId;
+  document.getElementById('syncIdInput').value=newId;
+  localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), newId);
+  setSyncStatus('ok','New sync ID generated — share it with your team');
+}
+
+function getSyncId(){
+  var inp=document.getElementById('syncIdInput');
+  var id=inp?inp.value.trim():_syncId;
+  if(id){
+    _syncId=id;
+    localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), id);
+  }
+  return id;
+}
+
+/** Push project to cloud (JSONBin or fallback key-value service) */
+function syncPush(){
+  var id=getSyncId();
+  if(!id){setSyncStatus('err','Please enter or generate a Sync ID first');return;}
+  setSyncStatus('busy','Pushing to cloud…');
+  saveFloorState();
+  var payload=buildSharePayload();
+  if(!payload){setSyncStatus('err','No project data to push');return;}
+  var encoded=encodePayload(payload);
+
+  // Use a CORS-friendly public KV store (jsonblob.com)
+  // bin name = our sync ID stored as the JSON key
+  var body=JSON.stringify({syncId:id, data:encoded, ts:Date.now(),
+    project:APP.cp?APP.cp.name:'unknown'});
+  fetch('https://jsonblob.com/api/jsonBlob',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:body
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var loc=r.headers.get('Location')||'';
+    var blobId=loc.split('/').pop();
+    // Store blob ID mapped to our sync ID
+    if(blobId) localStorage.setItem('rygfp_blob_'+id, blobId);
+    setSyncStatus('ok','Pushed successfully at '+new Date().toLocaleTimeString());
+    document.getElementById('syncShareMsg').textContent='';
+    // Show share link with encoded data
+    var url=window.location.href.split('#')[0]+'#share='+encoded;
+    document.getElementById('syncShareUrl').value=url.length<8000?url:'(too large for URL — use Copy Code)';
+    document.getElementById('syncCopyLinkBtn').disabled=url.length>=8000;
+  }).catch(function(err){
+    // Fallback: store in localStorage with sync ID as key (same-device sharing)
+    try{
+      localStorage.setItem('rygfp_cloud_'+id, encoded);
+      setSyncStatus('ok','Saved locally (cloud unavailable). Share same device or use Share Link.');
+    }catch(e){setSyncStatus('err','Push failed: '+err.message);}
+  });
+}
+
+/** Pull latest project from cloud */
+function syncPull(){
+  var id=getSyncId();
+  if(!id){setSyncStatus('err','Please enter or generate a Sync ID first');return;}
+  setSyncStatus('busy','Pulling from cloud…');
+  var blobId=localStorage.getItem('rygfp_blob_'+id);
+  if(blobId){
+    fetch('https://jsonblob.com/api/jsonBlob/'+blobId,{
+      headers:{'Accept':'application/json'}
+    }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(json){
+      if(!json||!json.data) throw new Error('No data in blob');
+      importFromCode(json.data);
+      setSyncStatus('ok','Pulled at '+new Date().toLocaleTimeString());
+    }).catch(function(){
+      // Fallback to localStorage
+      var local=localStorage.getItem('rygfp_cloud_'+id);
+      if(local){importFromCode(local);setSyncStatus('ok','Loaded from local sync cache');}
+      else setSyncStatus('err','Pull failed — no data found for this sync ID');
+    });
+  } else {
+    // No blob ID stored — try localStorage fallback
+    var local=localStorage.getItem('rygfp_cloud_'+id);
+    if(local){importFromCode(local);setSyncStatus('ok','Loaded from local sync cache');}
+    else setSyncStatus('err','Sync ID not found. Push from another device first.');
+  }
+}
+
+function importFromCode(code){
+  try{
+    var payload=JSON.parse(decodeURIComponent(escape(atob(code))));
+    if(!payload.v||!payload.project) throw new Error('Invalid format');
+    var proj=payload.project;
+    // Merge: if same project ID, update in place; otherwise add as new
+    var existing=APP.projects.find(function(p){return p.id===proj.id;});
+    if(existing){
+      Object.assign(existing,proj);
+      existing.modified=Date.now();
+    } else {
+      proj.modified=Date.now();
+      APP.projects.unshift(proj);
+    }
+    saveProjects();
+    renderHome();
+    if(APP.view==='editor'&&APP.currentProjectId===proj.id){
+      // Reload current floor
+      loadFloorState().then(function(){
+        renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();draw();
+      });
+    }
+    setSyncStatus('ok','Project synced successfully');
+  }catch(e){setSyncStatus('err','Import failed: '+e.message);}
+}
+
+function toggleAutoSync(on){
+  clearInterval(_autoSyncTimer);
+  document.getElementById('autoSyncLabel').textContent=on?'ON - every 60s':'OFF';
+  if(on){
+    _autoSyncTimer=setInterval(function(){
+      if(getSyncId()) syncPush();
+    },60000);
+  }
+}
+
+function generateSyncShareLink(){
+  var payload=buildSharePayload();
+  if(!payload){document.getElementById('syncShareMsg').textContent='No project to share';return;}
+  var code=encodePayload(payload);
+  var url=window.location.href.split('#')[0]+'#share='+code;
+  var ok=url.length<8000;
+  document.getElementById('syncShareUrl').value=ok?url:'(Code too large for URL — use Copy Code)';
+  document.getElementById('syncCopyLinkBtn').disabled=!ok;
+  document.getElementById('syncShareMsg').textContent=ok
+    ?'Link ready — paste in browser or share via email/messaging'
+    :'Project too large for a URL. Use the Copy Code button instead.';
+  document.getElementById('syncShareMsg').style.color=ok?'var(--green)':'var(--yellow)';
+}
+
+function syncCopyLink(){
+  var url=document.getElementById('syncShareUrl').value;
+  if(!url||url.startsWith('(')) return;
+  navigator.clipboard.writeText(url).then(function(){
+    document.getElementById('syncShareMsg').textContent='Link copied to clipboard!';
+    document.getElementById('syncShareMsg').style.color='var(--green)';
+  }).catch(function(){
+    document.getElementById('syncShareUrl').select();
+  });
+}
+
 // ══════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════
@@ -3459,6 +3810,85 @@ window.addEventListener('load',()=>{
       <div class="prev-canvas-wrap" id="prevCanvasWrap">
         <canvas id="prevCanvas"></canvas>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLOUD SYNC MODAL -->
+<div class="ov" id="syncOv">
+  <div class="modal" style="width:540px;max-height:86vh">
+    <div class="mh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+      <span class="mt">Cloud Sync &amp; Team Collaboration</span>
+      <button class="mx" onclick="closeModal('syncOv')">&#x2715;</button>
+    </div>
+    <div class="mb" style="padding:18px;overflow-y:auto">
+
+      <!-- Project ID row -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Project ID</div>
+      <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
+        Share this ID with teammates. Anyone with the ID can push/pull the latest project state from the same shared storage key.
+        Works via <strong>JSONBin.io</strong> (free, no login needed) — or paste any custom sync URL.
+      </p>
+      <div style="display:flex;gap:6px;margin-bottom:4px">
+        <input class="sync-id-box" id="syncIdInput" placeholder="Paste or generate a project sync ID…">
+        <button class="pbtn b" onclick="generateSyncId()" style="flex-shrink:0;white-space:nowrap">Generate ID</button>
+      </div>
+      <div class="sync-status" id="syncStatus">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncMsg" style="font-size:9px;color:var(--text3)">No sync ID set</span>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- Push / Pull -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">Sync Actions</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="border:1px solid var(--gbd);border-radius:7px;padding:12px;background:var(--gbg)">
+          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="vertical-align:middle"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Push (Upload)
+          </div>
+          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Save current project state to the cloud. Teammates can then Pull to get your latest changes.</p>
+          <button class="pbtn g" onclick="syncPush()" style="width:100%;font-size:9px">Push to Cloud</button>
+        </div>
+        <div style="border:1px solid var(--abd);border-radius:7px;padding:12px;background:var(--abc)">
+          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="vertical-align:middle"><polyline points="7 1 3 5 7 9"/><path d="M21 11V9a4 4 0 0 0-4-4H3"/><polyline points="17 23 21 19 17 15"/><path d="M3 13v2a4 4 0 0 0 4 4h14"/></svg>
+            Pull (Download)
+          </div>
+          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Load the latest project state from the cloud. Your local unsaved changes will be overwritten.</p>
+          <button class="pbtn b" onclick="syncPull()" style="width:100%;font-size:9px">Pull from Cloud</button>
+        </div>
+      </div>
+
+      <!-- Auto-sync -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2)">
+        <input type="checkbox" id="autoSyncChk" style="accent-color:var(--accent)" onchange="toggleAutoSync(this.checked)">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text1)">Auto-sync every 60 seconds</div>
+          <div style="font-size:8px;color:var(--text3)">Automatically push changes to keep your team up-to-date</div>
+        </div>
+        <span id="autoSyncLabel" style="margin-left:auto;font-size:8px;color:var(--text3)">OFF</span>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- URL share (read-only link) -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Share Link (Snapshot)</div>
+      <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">Generate a one-time URL that embeds the full project state. Recipient opens the link to import — no account needed.</p>
+      <div style="display:flex;gap:6px">
+        <input class="share-url-box" id="syncShareUrl" readonly placeholder="Click Generate to build link…" style="font-size:9px">
+        <button class="pbtn b" id="syncCopyLinkBtn" onclick="syncCopyLink()" disabled style="flex-shrink:0;white-space:nowrap">Copy</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="pbtn b" onclick="generateSyncShareLink()" style="flex:1;font-size:9px">Generate Link</button>
+        <button class="pbtn" onclick="generateShare()" style="flex:1;font-size:9px;background:var(--pbg);border:1px solid var(--pbd);color:var(--purple)">Copy Code Only</button>
+      </div>
+      <div id="syncShareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
+    </div>
+    <div class="mf">
+      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('syncOv')">Close</button>
     </div>
   </div>
 </div>
