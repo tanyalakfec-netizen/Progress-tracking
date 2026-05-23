@@ -3281,28 +3281,36 @@ function drawLblOnCtxWithOpts(c,x,y,title,val,color,fSz,opts){
 
 
 // ══════════════════════════════════════════════════════════════════
-// CLOUD SYNC  — JSONBin.io (free, no login)
-// Uses a private bin per project. The bin ID IS the project sync ID.
 // ══════════════════════════════════════════════════════════════════
-var JSONBIN_API = 'https://api.jsonbin.io/v3';
-// Public master key for jsonbin — users can replace with their own
-var JSONBIN_KEY = '$2a$10$placeholder_replace_with_real_key_from_jsonbin_io';
+// CLOUD SYNC  — JSONBin.io (CORS-enabled, free tier, no server needed)
+// Flow: user sets their JSONBin Master Key → app creates/updates a "bin"
+//       per project → teammates paste the Bin ID to pull changes.
+// Free tier: jsonbin.io (500 bins, no rate limit for small projects).
+// ══════════════════════════════════════════════════════════════════
+var JBIN = 'https://api.jsonbin.io/v3';
 var _autoSyncTimer = null;
-var _syncId = '';
+var _syncId = '';   // bin ID on JSONBin
+var _apiKey = '';   // user's JSONBin Master Key
 
 function showSyncModal(){
-  // Sync the old share modal content into new sync modal
   document.getElementById('syncOv').classList.add('open');
-  // Restore saved sync ID if any
-  var saved = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||''));
-  if(saved){ _syncId=saved; document.getElementById('syncIdInput').value=saved; setSyncStatus('ready','Sync ID loaded from local storage'); }
-  else setSyncStatus('idle','No sync ID set — Generate or paste one');
-  document.getElementById('syncShareUrl').value='';
-  document.getElementById('syncShareMsg').textContent='';
-  document.getElementById('syncCopyLinkBtn').disabled=true;
+  // Restore saved values
+  var savedKey = localStorage.getItem('rygfp_jbin_key') || '';
+  var savedId  = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||'')) || '';
+  _apiKey = savedKey;
+  _syncId  = savedId;
+  var keyEl = document.getElementById('jbinKeyInput');
+  if(keyEl) keyEl.value = savedKey;
+  if(savedId){ document.getElementById('syncIdInput').value = savedId; }
+  document.getElementById('syncShareUrl').value = '';
+  document.getElementById('syncShareMsg').textContent = '';
+  document.getElementById('syncCopyLinkBtn').disabled = true;
+  if(savedKey && savedId) setSyncStatus('ok','Ready — API key and Bin ID loaded');
+  else if(savedKey)       setSyncStatus('idle','API key set. Click "Create Bin" to get a Bin ID.');
+  else                    setSyncStatus('idle','Enter your JSONBin API key to enable cloud sync.');
 }
 
-function setSyncStatus(state, msg){
+function setSyncStatus(state,msg){
   var dot=document.getElementById('syncDot');
   var msgEl=document.getElementById('syncMsg');
   if(!dot||!msgEl) return;
@@ -3311,92 +3319,96 @@ function setSyncStatus(state, msg){
   msgEl.style.color=state==='ok'?'var(--green)':state==='err'?'var(--red)':state==='busy'?'#f59e0b':'var(--text3)';
 }
 
-/** Generate a new bin on JSONBin and get the bin ID */
+function saveApiKey(){
+  var el=document.getElementById('jbinKeyInput');
+  if(!el) return;
+  _apiKey=el.value.trim();
+  localStorage.setItem('rygfp_jbin_key', _apiKey);
+  setSyncStatus(_apiKey?'ok':'idle', _apiKey?'API key saved':'API key cleared');
+}
+
 function generateSyncId(){
-  // If the user hasn't set a real API key, generate a local UUID-based ID
-  // that we'll use with a generic CORS-friendly KV service
-  var newId='ryg-'+uuid();
-  _syncId=newId;
-  document.getElementById('syncIdInput').value=newId;
-  localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), newId);
-  setSyncStatus('ok','New sync ID generated — share it with your team');
+  // Creates a new bin on JSONBin and stores the bin ID as our sync ID
+  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
+  setSyncStatus('busy','Creating bin on JSONBin…');
+  saveFloorState();
+  var payload=buildSharePayload();
+  if(!payload){ setSyncStatus('err','No project to push'); return; }
+  var body=JSON.stringify({rygProject:encodePayload(payload), ts:Date.now()});
+  fetch(JBIN+'/b',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Master-Key':_apiKey,'X-Bin-Private':'false','X-Bin-Name':(APP.cp?APP.cp.name:'RYG')},
+    body:body
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status+' — check API key');
+    return r.json();
+  }).then(function(json){
+    var binId=json.metadata&&json.metadata.id?json.metadata.id:'';
+    if(!binId) throw new Error('No bin ID returned');
+    _syncId=binId;
+    document.getElementById('syncIdInput').value=binId;
+    localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), binId);
+    setSyncStatus('ok','Bin created! Share the Bin ID with your team: '+binId);
+  }).catch(function(e){
+    setSyncStatus('err','Create failed: '+e.message);
+  });
 }
 
 function getSyncId(){
   var inp=document.getElementById('syncIdInput');
   var id=inp?inp.value.trim():_syncId;
-  if(id){
-    _syncId=id;
-    localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), id);
-  }
+  if(id){ _syncId=id; localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''),id); }
   return id;
 }
 
-/** Push project to cloud (JSONBin or fallback key-value service) */
+/** Push — update existing bin with latest project state */
 function syncPush(){
   var id=getSyncId();
-  if(!id){setSyncStatus('err','Please enter or generate a Sync ID first');return;}
-  setSyncStatus('busy','Pushing to cloud…');
+  if(!id){ setSyncStatus('err','No Bin ID — click "Create Bin" first'); return; }
+  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
+  setSyncStatus('busy','Pushing to JSONBin…');
   saveFloorState();
   var payload=buildSharePayload();
-  if(!payload){setSyncStatus('err','No project data to push');return;}
+  if(!payload){ setSyncStatus('err','No project data'); return; }
   var encoded=encodePayload(payload);
-
-  // Use a CORS-friendly public KV store (jsonblob.com)
-  // bin name = our sync ID stored as the JSON key
-  var body=JSON.stringify({syncId:id, data:encoded, ts:Date.now(),
-    project:APP.cp?APP.cp.name:'unknown'});
-  fetch('https://jsonblob.com/api/jsonBlob',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body:body
+  fetch(JBIN+'/b/'+id,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':_apiKey},
+    body:JSON.stringify({rygProject:encoded, ts:Date.now(), pusher:navigator.userAgent.slice(0,40)})
   }).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status);
-    var loc=r.headers.get('Location')||'';
-    var blobId=loc.split('/').pop();
-    // Store blob ID mapped to our sync ID
-    if(blobId) localStorage.setItem('rygfp_blob_'+id, blobId);
-    setSyncStatus('ok','Pushed successfully at '+new Date().toLocaleTimeString());
-    document.getElementById('syncShareMsg').textContent='';
-    // Show share link with encoded data
+    return r.json();
+  }).then(function(){
+    setSyncStatus('ok','Pushed at '+new Date().toLocaleTimeString()+' — teammates can now Pull');
+    // Also update share URL
     var url=window.location.href.split('#')[0]+'#share='+encoded;
     document.getElementById('syncShareUrl').value=url.length<8000?url:'(too large for URL — use Copy Code)';
     document.getElementById('syncCopyLinkBtn').disabled=url.length>=8000;
-  }).catch(function(err){
-    // Fallback: store in localStorage with sync ID as key (same-device sharing)
-    try{
-      localStorage.setItem('rygfp_cloud_'+id, encoded);
-      setSyncStatus('ok','Saved locally (cloud unavailable). Share same device or use Share Link.');
-    }catch(e){setSyncStatus('err','Push failed: '+err.message);}
+  }).catch(function(e){
+    setSyncStatus('err','Push failed: '+e.message);
   });
 }
 
-/** Pull latest project from cloud */
+/** Pull — fetch latest data from the bin (no API key needed for public bins) */
 function syncPull(){
   var id=getSyncId();
-  if(!id){setSyncStatus('err','Please enter or generate a Sync ID first');return;}
-  setSyncStatus('busy','Pulling from cloud…');
-  var blobId=localStorage.getItem('rygfp_blob_'+id);
-  if(blobId){
-    fetch('https://jsonblob.com/api/jsonBlob/'+blobId,{
-      headers:{'Accept':'application/json'}
-    }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(json){
-      if(!json||!json.data) throw new Error('No data in blob');
-      importFromCode(json.data);
-      setSyncStatus('ok','Pulled at '+new Date().toLocaleTimeString());
-    }).catch(function(){
-      // Fallback to localStorage
-      var local=localStorage.getItem('rygfp_cloud_'+id);
-      if(local){importFromCode(local);setSyncStatus('ok','Loaded from local sync cache');}
-      else setSyncStatus('err','Pull failed — no data found for this sync ID');
-    });
-  } else {
-    // No blob ID stored — try localStorage fallback
-    var local=localStorage.getItem('rygfp_cloud_'+id);
-    if(local){importFromCode(local);setSyncStatus('ok','Loaded from local sync cache');}
-    else setSyncStatus('err','Sync ID not found. Push from another device first.');
-  }
+  if(!id){ setSyncStatus('err','Enter the Bin ID you received from a teammate'); return; }
+  setSyncStatus('busy','Pulling from JSONBin…');
+  // Public read — no Master Key required
+  var headers={'X-Bin-Meta':'false'};
+  if(_apiKey) headers['X-Master-Key']=_apiKey;
+  fetch(JBIN+'/b/'+id+'/latest',{headers:headers})
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status+' — check Bin ID');
+    return r.json();
+  }).then(function(json){
+    var code=json.rygProject||json.record&&json.record.rygProject;
+    if(!code) throw new Error('No RYG project data in this bin');
+    importFromCode(code);
+    setSyncStatus('ok','Pulled at '+new Date().toLocaleTimeString());
+  }).catch(function(e){
+    setSyncStatus('err','Pull failed: '+e.message);
+  });
 }
 
 function importFromCode(code){
@@ -3404,7 +3416,6 @@ function importFromCode(code){
     var payload=JSON.parse(decodeURIComponent(escape(atob(code))));
     if(!payload.v||!payload.project) throw new Error('Invalid format');
     var proj=payload.project;
-    // Merge: if same project ID, update in place; otherwise add as new
     var existing=APP.projects.find(function(p){return p.id===proj.id;});
     if(existing){
       Object.assign(existing,proj);
@@ -3416,7 +3427,6 @@ function importFromCode(code){
     saveProjects();
     renderHome();
     if(APP.view==='editor'&&APP.currentProjectId===proj.id){
-      // Reload current floor
       loadFloorState().then(function(){
         renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();draw();
       });
@@ -3429,23 +3439,21 @@ function toggleAutoSync(on){
   clearInterval(_autoSyncTimer);
   document.getElementById('autoSyncLabel').textContent=on?'ON - every 60s':'OFF';
   if(on){
-    _autoSyncTimer=setInterval(function(){
-      if(getSyncId()) syncPush();
-    },60000);
+    if(!_apiKey||!_syncId){ setSyncStatus('err','Set API key and Bin ID before enabling auto-sync'); document.getElementById('autoSyncChk').checked=false; return; }
+    _autoSyncTimer=setInterval(function(){ syncPush(); },60000);
   }
 }
 
 function generateSyncShareLink(){
   var payload=buildSharePayload();
-  if(!payload){document.getElementById('syncShareMsg').textContent='No project to share';return;}
+  if(!payload){ document.getElementById('syncShareMsg').textContent='No project to share'; return; }
   var code=encodePayload(payload);
   var url=window.location.href.split('#')[0]+'#share='+code;
   var ok=url.length<8000;
   document.getElementById('syncShareUrl').value=ok?url:'(Code too large for URL — use Copy Code)';
   document.getElementById('syncCopyLinkBtn').disabled=!ok;
-  document.getElementById('syncShareMsg').textContent=ok
-    ?'Link ready — paste in browser or share via email/messaging'
-    :'Project too large for a URL. Use the Copy Code button instead.';
+  var msg=ok?'Link ready — send to teammate':'Project too large for URL. Use the Copy Code button.';
+  document.getElementById('syncShareMsg').textContent=msg;
   document.getElementById('syncShareMsg').style.color=ok?'var(--green)':'var(--yellow)';
 }
 
@@ -3453,11 +3461,9 @@ function syncCopyLink(){
   var url=document.getElementById('syncShareUrl').value;
   if(!url||url.startsWith('(')) return;
   navigator.clipboard.writeText(url).then(function(){
-    document.getElementById('syncShareMsg').textContent='Link copied to clipboard!';
+    document.getElementById('syncShareMsg').textContent='Link copied!';
     document.getElementById('syncShareMsg').style.color='var(--green)';
-  }).catch(function(){
-    document.getElementById('syncShareUrl').select();
-  });
+  }).catch(function(){ document.getElementById('syncShareUrl').select(); });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -3816,76 +3822,99 @@ window.addEventListener('load',()=>{
 
 <!-- CLOUD SYNC MODAL -->
 <div class="ov" id="syncOv">
-  <div class="modal" style="width:540px;max-height:86vh">
+  <div class="modal" style="width:560px;max-height:90vh">
     <div class="mh">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
       <span class="mt">Cloud Sync &amp; Team Collaboration</span>
       <button class="mx" onclick="closeModal('syncOv')">&#x2715;</button>
     </div>
-    <div class="mb" style="padding:18px;overflow-y:auto">
+    <div class="mb" style="padding:16px 18px;overflow-y:auto">
 
-      <!-- Project ID row -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Project ID</div>
+      <!-- STEP 1: API Key -->
+      <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">
+          Step 1 — Get a free JSONBin API Key
+        </div>
+        <p style="font-size:9px;color:var(--text2);line-height:1.7;margin-bottom:8px">
+          1. Go to <strong><a href="https://jsonbin.io" target="_blank" style="color:var(--accent)">jsonbin.io</a></strong> → Sign up free<br>
+          2. In your dashboard → <strong>API Keys</strong> → copy your <strong>Master Key</strong><br>
+          3. Paste it below — it is saved locally in your browser only
+        </p>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="jbinKeyInput" type="password" placeholder="Paste your JSONBin Master Key here ($2a$10$…)"
+            style="flex:1;padding:7px 10px;border:1px solid var(--abd);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;background:#fff;color:var(--text1)">
+          <button class="pbtn b" onclick="saveApiKey()" style="flex-shrink:0;white-space:nowrap;font-size:9px">Save Key</button>
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:4px">🔒 Key is stored only in your browser localStorage — never sent anywhere except JSONBin.io</div>
+      </div>
+
+      <!-- STEP 2: Bin ID -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
+        Step 2 — Create or Paste a Bin ID
+      </div>
       <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        Share this ID with teammates. Anyone with the ID can push/pull the latest project state from the same shared storage key.
-        Works via <strong>JSONBin.io</strong> (free, no login needed) — or paste any custom sync URL.
+        The <strong>Bin ID</strong> is your team's shared channel. Create one (you need the API key), then share the Bin ID with teammates. They paste it here to Pull your latest changes — they do <em>not</em> need the API key to Pull.
       </p>
       <div style="display:flex;gap:6px;margin-bottom:4px">
-        <input class="sync-id-box" id="syncIdInput" placeholder="Paste or generate a project sync ID…">
-        <button class="pbtn b" onclick="generateSyncId()" style="flex-shrink:0;white-space:nowrap">Generate ID</button>
+        <input class="sync-id-box" id="syncIdInput" placeholder="Bin ID will appear here after creating, or paste a teammate's Bin ID…">
+        <button class="pbtn b" onclick="generateSyncId()" style="flex-shrink:0;white-space:nowrap;font-size:9px">Create Bin</button>
       </div>
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot" id="syncDot"></span>
-        <span id="syncMsg" style="font-size:9px;color:var(--text3)">No sync ID set</span>
+        <span id="syncMsg" style="font-size:9px;color:var(--text3)">Enter API key to get started</span>
       </div>
 
       <div style="border-top:1px solid var(--border);margin:14px 0"></div>
 
-      <!-- Push / Pull -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">Sync Actions</div>
+      <!-- STEP 3: Push / Pull -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">
+        Step 3 — Push or Pull
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="border:1px solid var(--gbd);border-radius:7px;padding:12px;background:var(--gbg)">
           <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="vertical-align:middle"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-            Push (Upload)
+            ⬆ Push (Upload)
           </div>
-          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Save current project state to the cloud. Teammates can then Pull to get your latest changes.</p>
+          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Save current project to cloud. Requires API key + Bin ID.</p>
           <button class="pbtn g" onclick="syncPush()" style="width:100%;font-size:9px">Push to Cloud</button>
         </div>
         <div style="border:1px solid var(--abd);border-radius:7px;padding:12px;background:var(--abc)">
           <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="vertical-align:middle"><polyline points="7 1 3 5 7 9"/><path d="M21 11V9a4 4 0 0 0-4-4H3"/><polyline points="17 23 21 19 17 15"/><path d="M3 13v2a4 4 0 0 0 4 4h14"/></svg>
-            Pull (Download)
+            ⬇ Pull (Download)
           </div>
-          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Load the latest project state from the cloud. Your local unsaved changes will be overwritten.</p>
+          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Load latest from cloud. Only needs Bin ID — no API key required.</p>
           <button class="pbtn b" onclick="syncPull()" style="width:100%;font-size:9px">Pull from Cloud</button>
         </div>
       </div>
 
       <!-- Auto-sync -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);margin-bottom:14px">
         <input type="checkbox" id="autoSyncChk" style="accent-color:var(--accent)" onchange="toggleAutoSync(this.checked)">
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--text1)">Auto-sync every 60 seconds</div>
-          <div style="font-size:8px;color:var(--text3)">Automatically push changes to keep your team up-to-date</div>
+          <div style="font-size:8px;color:var(--text3)">Automatically Push so teammates always have your latest version</div>
         </div>
-        <span id="autoSyncLabel" style="margin-left:auto;font-size:8px;color:var(--text3)">OFF</span>
+        <span id="autoSyncLabel" style="margin-left:auto;font-size:8px;color:var(--text3);white-space:nowrap">OFF</span>
       </div>
 
-      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
-
-      <!-- URL share (read-only link) -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Share Link (Snapshot)</div>
-      <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">Generate a one-time URL that embeds the full project state. Recipient opens the link to import — no account needed.</p>
-      <div style="display:flex;gap:6px">
-        <input class="share-url-box" id="syncShareUrl" readonly placeholder="Click Generate to build link…" style="font-size:9px">
-        <button class="pbtn b" id="syncCopyLinkBtn" onclick="syncCopyLink()" disabled style="flex-shrink:0;white-space:nowrap">Copy</button>
+      <!-- Share Link -->
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
+          Share Link (no cloud account needed)
+        </div>
+        <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
+          Embed the full project into a URL. Anyone can open the link to import. Best for small projects. Large projects: use <strong>Copy Code</strong> instead.
+        </p>
+        <div style="display:flex;gap:6px">
+          <input class="share-url-box" id="syncShareUrl" readonly placeholder="Click Generate to build link…" style="font-size:9px">
+          <button class="pbtn b" id="syncCopyLinkBtn" onclick="syncCopyLink()" disabled style="flex-shrink:0;white-space:nowrap;font-size:9px">Copy</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="pbtn b" onclick="generateSyncShareLink()" style="flex:1;font-size:9px">⚡ Generate Link</button>
+          <button class="pbtn" onclick="generateShare()" style="flex:1;font-size:9px;background:var(--pbg);border:1px solid var(--pbd);color:var(--purple)">📋 Copy Code Only</button>
+        </div>
+        <div id="syncShareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:6px">
-        <button class="pbtn b" onclick="generateSyncShareLink()" style="flex:1;font-size:9px">Generate Link</button>
-        <button class="pbtn" onclick="generateShare()" style="flex:1;font-size:9px;background:var(--pbg);border:1px solid var(--pbd);color:var(--purple)">Copy Code Only</button>
-      </div>
-      <div id="syncShareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
     </div>
     <div class="mf">
       <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('syncOv')">Close</button>
