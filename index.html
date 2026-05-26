@@ -3282,25 +3282,32 @@ function drawLblOnCtxWithOpts(c,x,y,title,val,color,fSz,opts){
 
 // ══════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════
-// CLOUD SYNC  — JSONBin.io  (API key embedded)
+// CLOUD SYNC  — JSONBin.io (CORS-enabled, free tier, no server needed)
+// Flow: user sets their JSONBin Master Key → app creates/updates a "bin"
+//       per project → teammates paste the Bin ID to pull changes.
+// Free tier: jsonbin.io (500 bins, no rate limit for small projects).
 // ══════════════════════════════════════════════════════════════════
 var JBIN = 'https://api.jsonbin.io/v3';
-var _JBIN_KEY = '$2a$10$wtZ3Uli/Smso9fpKJPj7iui3ENDDwa3y5HOLlOslznN2EtNy3tTy.';
-var _apiKey   = _JBIN_KEY;  // pre-filled — no user input needed
 var _autoSyncTimer = null;
-var _syncId = '';
+var _syncId = '';   // bin ID on JSONBin
+var _apiKey = '';   // user's JSONBin Master Key
 
 function showSyncModal(){
   document.getElementById('syncOv').classList.add('open');
-  var savedId = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||'')) || '';
-  _syncId = savedId;
-  var binEl = document.getElementById('syncIdInput');
-  if(binEl) binEl.value = savedId;
+  // Restore saved values
+  var savedKey = localStorage.getItem('rygfp_jbin_key') || '';
+  var savedId  = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||'')) || '';
+  _apiKey = savedKey;
+  _syncId  = savedId;
+  var keyEl = document.getElementById('jbinKeyInput');
+  if(keyEl) keyEl.value = savedKey;
+  if(savedId){ document.getElementById('syncIdInput').value = savedId; }
   document.getElementById('syncShareUrl').value = '';
   document.getElementById('syncShareMsg').textContent = '';
   document.getElementById('syncCopyLinkBtn').disabled = true;
-  setSyncStatus(savedId?'ok':'idle',
-    savedId ? 'Bin ID ready — Push to upload, Pull to download' : 'Click "Create Bin" to start');
+  if(savedKey && savedId) setSyncStatus('ok','Ready — API key and Bin ID loaded');
+  else if(savedKey)       setSyncStatus('idle','API key set. Click "Create Bin" to get a Bin ID.');
+  else                    setSyncStatus('idle','Enter your JSONBin API key to enable cloud sync.');
 }
 
 function setSyncStatus(state,msg){
@@ -3312,42 +3319,36 @@ function setSyncStatus(state,msg){
   msgEl.style.color=state==='ok'?'var(--green)':state==='err'?'var(--red)':state==='busy'?'#f59e0b':'var(--text3)';
 }
 
-function saveApiKey(){ /* key is embedded — no-op */ }
+function saveApiKey(){
+  var el=document.getElementById('jbinKeyInput');
+  if(!el) return;
+  _apiKey=el.value.trim();
+  localStorage.setItem('rygfp_jbin_key', _apiKey);
+  setSyncStatus(_apiKey?'ok':'idle', _apiKey?'API key saved':'API key cleared');
+}
 
 function generateSyncId(){
-  // Must be inside a project — guard against home screen
-  if(!APP.currentProjectId){
-    setSyncStatus('err','Open a project first, then create a Bin');
-    return;
-  }
+  // Creates a new bin on JSONBin and stores the bin ID as our sync ID
+  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
   setSyncStatus('busy','Creating bin on JSONBin…');
-  // Use a minimal payload: just project name + timestamp (fast, small)
-  var initBody=JSON.stringify({
-    rygProject: '',
-    projectName: APP.cp ? APP.cp.name : 'RYG Project',
-    ts: Date.now()
-  });
+  saveFloorState();
+  var payload=buildSharePayload();
+  if(!payload){ setSyncStatus('err','No project to push'); return; }
+  var body=JSON.stringify({rygProject:encodePayload(payload), ts:Date.now()});
   fetch(JBIN+'/b',{
     method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'X-Master-Key': _apiKey,
-      'X-Bin-Private': 'false',
-      'X-Bin-Name': (APP.cp ? APP.cp.name : 'RYG').slice(0,36)
-    },
-    body: initBody
+    headers:{'Content-Type':'application/json','X-Master-Key':_apiKey,'X-Bin-Private':'false','X-Bin-Name':(APP.cp?APP.cp.name:'RYG')},
+    body:body
   }).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok) throw new Error('HTTP '+r.status+' — check API key');
     return r.json();
   }).then(function(json){
-    var binId=(json.metadata&&json.metadata.id)||(json.record&&json.record.id)||'';
-    if(!binId) throw new Error('No bin ID in response: '+JSON.stringify(json));
-    _syncId = binId;
-    document.getElementById('syncIdInput').value = binId;
+    var binId=json.metadata&&json.metadata.id?json.metadata.id:'';
+    if(!binId) throw new Error('No bin ID returned');
+    _syncId=binId;
+    document.getElementById('syncIdInput').value=binId;
     localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), binId);
-    setSyncStatus('ok','Bin created ✔  ID: '+binId+'  —  Now click Push to upload');
-    // Auto-push project data now
-    syncPush();
+    setSyncStatus('ok','Bin created! Share the Bin ID with your team: '+binId);
   }).catch(function(e){
     setSyncStatus('err','Create failed: '+e.message);
   });
@@ -3355,8 +3356,8 @@ function generateSyncId(){
 
 function getSyncId(){
   var inp=document.getElementById('syncIdInput');
-  var id=(inp?inp.value.trim():'')||_syncId;
-  if(id){ _syncId=id; if(APP.currentProjectId) localStorage.setItem('rygfp_sync_id_'+APP.currentProjectId,id); }
+  var id=inp?inp.value.trim():_syncId;
+  if(id){ _syncId=id; localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''),id); }
   return id;
 }
 
@@ -3364,7 +3365,7 @@ function getSyncId(){
 function syncPush(){
   var id=getSyncId();
   if(!id){ setSyncStatus('err','No Bin ID — click "Create Bin" first'); return; }
-  if(!_apiKey){ setSyncStatus('err','No API key configured'); return; }
+  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
   setSyncStatus('busy','Pushing to JSONBin…');
   saveFloorState();
   var payload=buildSharePayload();
@@ -3829,13 +3830,27 @@ window.addEventListener('load',()=>{
     </div>
     <div class="mb" style="padding:16px 18px;overflow-y:auto">
 
-      <!-- Bin ID section -->
-      <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:10px;margin-bottom:12px;font-size:9px;color:var(--text2);line-height:1.7">
-        🔗 <strong>How it works:</strong> Click <strong>Create Bin</strong> to create a shared storage channel.
-        Share the <strong>Bin ID</strong> with teammates — they paste it and click Pull. No account needed to Pull.
+      <!-- STEP 1: API Key -->
+      <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">
+          Step 1 — Get a free JSONBin API Key
+        </div>
+        <p style="font-size:9px;color:var(--text2);line-height:1.7;margin-bottom:8px">
+          1. Go to <strong><a href="https://jsonbin.io" target="_blank" style="color:var(--accent)">jsonbin.io</a></strong> → Sign up free<br>
+          2. In your dashboard → <strong>API Keys</strong> → copy your <strong>Master Key</strong><br>
+          3. Paste it below — it is saved locally in your browser only
+        </p>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="jbinKeyInput" type="password" placeholder="Paste your JSONBin Master Key here ($2a$10$…)"
+            style="flex:1;padding:7px 10px;border:1px solid var(--abd);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;background:#fff;color:var(--text1)">
+          <button class="pbtn b" onclick="saveApiKey()" style="flex-shrink:0;white-space:nowrap;font-size:9px">Save Key</button>
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:4px">🔒 Key is stored only in your browser localStorage — never sent anywhere except JSONBin.io</div>
       </div>
+
+      <!-- STEP 2: Bin ID -->
       <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
-        Project Bin ID
+        Step 2 — Create or Paste a Bin ID
       </div>
       <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
         The <strong>Bin ID</strong> is your team's shared channel. Create one (you need the API key), then share the Bin ID with teammates. They paste it here to Pull your latest changes — they do <em>not</em> need the API key to Pull.
@@ -3853,7 +3868,7 @@ window.addEventListener('load',()=>{
 
       <!-- STEP 3: Push / Pull -->
       <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">
-        Push or Pull
+        Step 3 — Push or Pull
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="border:1px solid var(--gbd);border-radius:7px;padding:12px;background:var(--gbg)">
