@@ -242,6 +242,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .si{padding:6px 8px;border-radius:5px;border:1px solid var(--border);margin-bottom:3px;cursor:pointer;transition:.12s;background:#fff}
 .si:hover{border-color:var(--border2);background:var(--bg3)}
 .si.on{border-color:var(--accent);background:var(--abc)}
+.si.si-hidden{background:var(--bg3);border-style:dashed;opacity:.7}
 .sih{display:flex;align-items:center;gap:5px;margin-bottom:2px}
 .sdot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 .sname{font-size:10px;font-weight:600;color:var(--text1);flex:1}
@@ -314,18 +315,32 @@ td.hi{color:var(--accent);font-weight:700}
 .item-flr-tags{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}
 .item-flr-tag{font-size:7px;padding:1px 4px;border-radius:3px;background:var(--pbg);color:var(--purple);border:1px solid var(--pbd);font-weight:700}
 
-/* ═══ LABEL TOGGLE / CATEGORY FILTER ═══════════════════════════ */
-.view-ctrl-bar{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.vc-label{font-size:9px;color:var(--text2);font-weight:700;white-space:nowrap}
+/* ═══ LABEL TOGGLE / ITEM VISIBILITY FILTER ════════════════════════ */
+.view-ctrl-bar{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;min-height:34px}
+.view-ctrl-bar::-webkit-scrollbar{height:3px}
+.view-ctrl-bar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.vc-label{font-size:9px;color:var(--text2);font-weight:700;white-space:nowrap;flex-shrink:0}
 .vc-sep{width:1px;height:18px;background:var(--border2);flex-shrink:0}
-.vc-btn{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:#fff;color:var(--text2);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:.12s;white-space:nowrap}
+.vc-btn{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:#fff;color:var(--text2);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:.12s;white-space:nowrap;flex-shrink:0}
 .vc-btn:hover{background:var(--bg3);color:var(--text1)}
 .vc-btn.on{background:var(--abc);border-color:var(--abd);color:var(--accent);font-weight:700}
 .vc-btn.lbl-on{background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:var(--green)}
-.cat-wrap{display:flex;gap:3px;flex-wrap:wrap}
-.cat-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;border:1px solid;font-size:8px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
-.cat-pill:hover{opacity:.85}
-.cat-pill.active{box-shadow:0 0 0 2px currentColor}
+/* item visibility pills */
+.vis-wrap{display:flex;gap:3px;flex-wrap:nowrap;align-items:center}
+.vis-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;border:1px solid;font-size:8px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap;flex-shrink:0;font-family:'JetBrains Mono',monospace;position:relative}
+.vis-pill:hover{opacity:.85;transform:translateY(-1px)}
+/* visible state — colored by RYG status of the item */
+.vis-pill.vG{color:var(--green);border-color:var(--gbd);background:var(--gbg)}
+.vis-pill.vY{color:var(--yellow);border-color:var(--ybd);background:var(--ybg)}
+.vis-pill.vR{color:var(--red);border-color:var(--rbd);background:var(--rbg)}
+.vis-pill.vN{color:var(--text2);border-color:var(--border2);background:var(--bg2)}
+/* HIDDEN state — eye-off, greyed out, strikethrough text */
+.vis-pill.hidden{color:var(--text3)!important;background:var(--bg3)!important;border-color:var(--border)!important;opacity:.5;text-decoration:line-through}
+.vis-pill .vis-eye{font-size:8px;opacity:.7;flex-shrink:0}
+/* "All ON" quick btn */
+.vis-all-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);background:#fff;color:var(--text2);font-size:8px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap;flex-shrink:0}
+.vis-all-btn:hover{background:var(--abc);border-color:var(--abd);color:var(--accent)}
+.vis-all-btn.has-hidden{background:var(--abc);border-color:var(--abd);color:var(--accent)}
 /* label tag on shape row in sidebar */
 .sh-cat-tag{font-size:7px;padding:1px 4px;border-radius:3px;font-weight:700;white-space:nowrap}
 
@@ -494,10 +509,16 @@ td.hi{color:var(--accent);font-weight:700}
     Labels ON
   </button>
   <div class="vc-sep"></div>
-  <span class="vc-label">Filter by Category</span>
-  <div class="cat-wrap" id="catFilterWrap">
-    <button class="cat-pill active" id="cat-all" onclick="setCatFilter('all')" style="color:#475569;border-color:#cbd5e1;background:#f1f5f9">All</button>
-  </div>
+  <span class="vc-label">Layer Visibility</span>
+  <button class="vis-all-btn" id="visAllBtn" onclick="showAllItems()" title="Show all items">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    All ON
+  </button>
+  <button class="vis-all-btn" onclick="hideAllItems()" title="Hide all items" style="color:var(--text3)">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    All OFF
+  </button>
+  <div class="vis-wrap" id="visFilterWrap"></div>
   <div class="vc-sep"></div>
   <button class="vc-btn" onclick="exportCurrentViewPDF()" title="Export current filtered view to PDF" style="color:var(--red);border-color:var(--rbd);background:var(--rbg)">
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -873,21 +894,14 @@ function getCatForShape(sh){
   return DEFAULT_CATEGORIES.find(c=>c.id===sh.category)||null;
 }
 
-/** Is this shape visible under the active category filter?
- *  Priority: sh.category (manual) > auto-detect from sh.rowKey > unlinked (hidden when filtered) */
+/** Is this shape visible given the current item-visibility toggles?
+ *  - If hiddenItems is empty → show everything
+ *  - If shape.rowKey is in hiddenItems → hide
+ *  - Unlinked shapes (no rowKey) → always show */
 function shapePassesFilter(sh){
-  if(S.catFilter==='all') return true;
-  // Manual category override on shape
-  if(sh.category){
-    return sh.category===S.catFilter;
-  }
-  // Auto-detect from linked CSA item id
-  if(sh.rowKey){
-    var cat=getCatForItem(sh.rowKey);
-    return cat ? cat.id===S.catFilter : false;
-  }
-  // Unlinked shapes: hide when any category filter is active
-  return false;
+  if(!S.hiddenItems || S.hiddenItems.size === 0) return true;
+  if(!sh.rowKey) return true; // unlinked shapes always visible
+  return !S.hiddenItems.has(sh.rowKey);
 }
 
 function makeFloorState(){
@@ -930,7 +944,7 @@ const S={
   pdfDoc:null, pageNum:1, totalPages:1,
   filter:'all',
   showLabels:true,        // toggle label visibility
-  catFilter:'all',          // active category filter
+  hiddenItems: new Set(), // set of rowKey IDs whose shapes are hidden on canvas
   clipboard:null,            // copied shape (full clone)
   propClipboard:null,        // copied properties only
   // Render style overrides (for preview & export)
@@ -1228,8 +1242,9 @@ async function switchBuilding(name){
   if(APP.cp)APP.cp.activeBuilding=name;
   const bld=APP.cp?.buildings[name];
   APP.currentFloor=bld?.activeFloor&&bld.floors[bld.activeFloor]?bld.activeFloor:Object.keys(bld?.floors||{})[0]||null;
+  S.hiddenItems=new Set(); // reset visibility on building change
   await loadFloorState();
-  renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();draw();
+  renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();renderCatFilterBar();draw();
   hint('Building: '+name+'  ·  Floor: '+(APP.currentFloor||'—'));
 }
 async function switchFloor(name){
@@ -1237,6 +1252,7 @@ async function switchFloor(name){
   saveFloorState();
   APP.currentFloor=name;
   const bld=getCurrentBldData();if(bld)bld.activeFloor=name;
+  S.hiddenItems=new Set(); // reset visibility on floor change
   await loadFloorState();
   renderFloorTabs();renderCSA();refreshShapes();updateStats();
   renderCatFilterBar(); draw();
@@ -1785,6 +1801,7 @@ function pickShape(cx,cy){
   const wp=c2w(cx,cy);
   for(let i=S.shapes.length-1;i>=0;i--){
     const sh=S.shapes[i];
+    if(!shapePassesFilter(sh)) continue; // skip hidden-layer shapes
     if(sh.type==='point'){const cp=w2c(sh.pts[0].x,sh.pts[0].y);if(Math.hypot(cx-cp.x,cy-cp.y)<12){selShape(sh.id);return;}}
     else if(sh.type==='polygon'){if(ptInPoly(wp.x,wp.y,sh.pts)){selShape(sh.id);return;}}
     else{if(nearLine(wp,sh.pts,8/S.zoom)){selShape(sh.id);return;}}
@@ -1914,7 +1931,11 @@ function draw(){
     for(let x=x0;x<xE;x+=gs){ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,yE);ctx.stroke();}
     for(let y=y0;y<yE;y+=gs){ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(xE,y);ctx.stroke();}
   }
-  S.shapes.forEach(sh=>drawShape(sh,sh===S.sel));
+  // Draw shapes — skip hidden items, but always draw selected shape so it stays accessible
+  S.shapes.forEach(sh=>{
+    if(!shapePassesFilter(sh) && sh!==S.sel) return;
+    drawShape(sh, sh===S.sel, !shapePassesFilter(sh));
+  });
   if(S.drawing&&S.pts.length>0){
     let wS=S.snapPt||c2w(S.mouse.x,S.mouse.y);if(S.axisWp)wS=S.axisWp;
     const pre=[...S.pts,{x:wS.x,y:wS.y}];
@@ -1966,9 +1987,11 @@ function draw(){
   ctx.restore();
 }
 
-function drawShape(sh,sel){
+function drawShape(sh,sel,dimmed){
   const st=resolveState(sh);const{stroke:sc,fill:fc}=stateColors(st,sh.color);
   const lw=(sel?3:1.8)/S.zoom;ctx.save();
+  // If shape belongs to a hidden layer, render ghost-style so user knows it's filtered
+  if(dimmed){ ctx.globalAlpha=0.18; }
   const pctStr=sh.rowKey&&sh.workPct!=null?`${sh.workPct.toFixed(0)}%`:(sh.rowKey?'0%':null);
   if(sh.type==='polygon'&&sh.pts.length>=3){
     drawPoly(sh.pts);ctx.closePath();ctx.fillStyle=fc;ctx.fill();ctx.strokeStyle=sc;ctx.lineWidth=lw;ctx.stroke();
@@ -2083,7 +2106,7 @@ function upWorkPct(v){
 }
 function linkShape(v){
   if(!S.sel)return;S.sel.rowKey=v||null;
-  showProps(S.sel);renderCSA();refreshShapes();updateStats();draw();
+  showProps(S.sel);renderCSA();refreshShapes();updateStats();renderCatFilterBar();draw();
 }
 
 function refreshShapes(){
@@ -2094,11 +2117,13 @@ function refreshShapes(){
     const m=measure(sh);const st=resolveState(sh);const{stroke:sc}=stateColors(st,sh.color);
     const item=(getCurrentBldData()?.items||[]).find(i=>i.id===sh.rowKey);
     const shPct=sh.rowKey?(sh.workPct!=null?sh.workPct:0):null;
-    return `<div class="si${sh===S.sel?' on':''}" onclick="selShape(${sh.id})">
+    const isHidden=!shapePassesFilter(sh);
+    return `<div class="si${sh===S.sel?' on':''}${isHidden?' si-hidden':''}" onclick="selShape(${sh.id})" title="${isHidden?'Layer hidden — click pill to reveal':''}">
       <div class="sih">
-        <div class="sdot" style="background:${sc}"></div>
-        <span class="sname">${sh.label}</span>
-        ${sh.state?`<span style="font-size:8px;font-weight:700;color:${sc};flex-shrink:0">${sh.state==='G'?'✓':sh.state==='Y'?'~':'✕'}</span>`:''}
+        <div class="sdot" style="background:${sc}${isHidden?';opacity:.35':''}"></div>
+        <span class="sname" style="${isHidden?'opacity:.4;text-decoration:line-through;':''}">${sh.label}</span>
+        ${isHidden?'<span style="font-size:7px;color:var(--text3);flex-shrink:0">hidden</span>':
+          sh.state?`<span style="font-size:8px;font-weight:700;color:${sc};flex-shrink:0">${sh.state==='G'?'✓':sh.state==='Y'?'~':'✕'}</span>`:''}
         <div class="mini-st" onclick="event.stopPropagation()">
           <button class="mst sG${sh.state==='G'?' active':''}" onclick="S.sel=S.shapes.find(x=>x.id===${sh.id});setShapeState('G')">G</button>
           <button class="mst sY${sh.state==='Y'?' active':''}" onclick="S.sel=S.shapes.find(x=>x.id===${sh.id});setShapeState('Y')">Y</button>
@@ -2106,7 +2131,7 @@ function refreshShapes(){
         </div>
         <button class="sdel" onclick="event.stopPropagation();S.sel=S.shapes.find(x=>x.id===${sh.id});delShape()">✕</button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:10px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;${isHidden?'opacity:.4':''}">
         <span style="color:var(--accent);font-weight:700">${m.val} ${m.unit}</span>
         ${item?`<span style="color:var(--text3);font-size:9px">[${item.id}]</span>`:`<span style="color:var(--text3);font-size:9px">unlinked</span>`}
         ${(function(){var c=getCatForShape(sh);return c?'<span class="sh-cat-tag" style="background:'+c.bg+';color:'+c.color+';border:1px solid '+c.color+'33">'+c.label+'</span>':'';})()} 
@@ -2873,33 +2898,118 @@ function toggleLabels(){
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CATEGORY FILTER
+// ITEM VISIBILITY FILTER  (replaces category filter)
+// Each work item in the current building can be toggled on/off.
+// hiddenItems is a Set of rowKey IDs whose shapes are hidden.
 // ══════════════════════════════════════════════════════════════════
-function setCatFilter(catId){
-  S.catFilter=catId;
-  // Highlight active pill
-  document.querySelectorAll('.cat-pill').forEach(function(p){
-    p.classList.toggle('active', p.id==='cat-'+catId);
-  });
+
+/** Toggle one item's visibility. If already hidden → show. If visible → hide. */
+function toggleItemVis(itemId) {
+  if (!S.hiddenItems) S.hiddenItems = new Set();
+  if (S.hiddenItems.has(itemId)) {
+    S.hiddenItems.delete(itemId);
+  } else {
+    S.hiddenItems.add(itemId);
+  }
+  _refreshVisFilterUI();
   draw();
-  hint(catId==='all'
-    ? 'Showing all categories'
-    : 'Filter: '+(DEFAULT_CATEGORIES.find(c=>c.id===catId)||{label:catId}).label);
+  var hidden = S.hiddenItems.has(itemId);
+  hint(itemId + (hidden ? ' — hidden' : ' — visible'));
 }
 
-function renderCatFilterBar(){
-  var wrap=document.getElementById('catFilterWrap');
-  if(!wrap) return;
-  var html='<button class="cat-pill'+(S.catFilter==='all'?' active':'');
-  html+='" id="cat-all" onclick="setCatFilter(&quot;all&quot;)" ';
-  html+='style="color:#475569;border-color:#cbd5e1;background:#f1f5f9">All</button>';
-  DEFAULT_CATEGORIES.forEach(function(cat){
-    html+='<button class="cat-pill'+(S.catFilter===cat.id?' active':'');
-    html+='" id="cat-'+cat.id+'" onclick="setCatFilter(&quot;'+cat.id+'&quot;)" ';
-    html+='style="color:'+cat.color+';border-color:'+cat.color+'40;background:'+cat.bg+'">';
-    html+=cat.label+'</button>';
+/** Solo: hide all items EXCEPT the given one */
+function soloItem(itemId) {
+  if (!S.hiddenItems) S.hiddenItems = new Set();
+  var bld = getCurrentBldData();
+  var allIds = (bld ? bld.items || [] : []).map(function(i){ return i.id; });
+  S.hiddenItems = new Set(allIds.filter(function(id){ return id !== itemId; }));
+  _refreshVisFilterUI();
+  draw();
+  hint('Solo: ' + itemId);
+}
+
+/** Show all — clear all hidden items */
+function showAllItems() {
+  S.hiddenItems = new Set();
+  _refreshVisFilterUI();
+  draw();
+  hint('All layers visible');
+}
+
+/** Hide all items */
+function hideAllItems() {
+  if (!S.hiddenItems) S.hiddenItems = new Set();
+  var bld = getCurrentBldData();
+  (bld ? bld.items || [] : []).forEach(function(i){ S.hiddenItems.add(i.id); });
+  _refreshVisFilterUI();
+  draw();
+  hint('All layers hidden — click a pill to reveal');
+}
+
+/** Rebuild the vis filter pill bar to match current building items */
+function renderCatFilterBar() {
+  var wrap = document.getElementById('visFilterWrap');
+  if (!wrap) return;
+  var bld = getCurrentBldData();
+  var items = bld ? (bld.items || []) : [];
+
+  if (!items.length) {
+    wrap.innerHTML = '<span style="font-size:9px;color:var(--text3);font-style:italic">No items</span>';
+    return;
+  }
+
+  var html = '';
+  items.forEach(function(item) {
+    var isHidden = S.hiddenItems && S.hiddenItems.has(item.id);
+    // Determine current floor status for colour coding
+    var flrPct = getFlrPct(getCurrentFloorData(), item.id);
+    var st = flrPct >= 0.999 ? 'G' : flrPct > 0 ? 'Y' : 'R';
+    var stClass = isHidden ? 'hidden' : 'v' + st;
+    var eyeIcon = isHidden
+      ? '<svg class="vis-eye" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg class="vis-eye" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var shortDesc = item.desc.length > 18 ? item.desc.slice(0, 18) + '…' : item.desc;
+    html += '<button class="vis-pill ' + stClass + '"'
+      + ' title="' + item.id + ' — ' + item.desc + '\nClick: toggle · Ctrl+click: solo"'
+      + ' onclick="handleVisPillClick(event,\'' + item.id.replace(/'/g, "\\'") + '\')">'
+      + eyeIcon
+      + '<span style="font-family:\'JetBrains Mono\',monospace">[' + item.id + ']</span>'
+      + '<span style="font-weight:400;opacity:.8;font-family:\'JetBrains Mono\',monospace;font-size:7px">' + shortDesc + '</span>'
+      + '</button>';
   });
-  wrap.innerHTML=html;
+  wrap.innerHTML = html;
+
+  // Update "All ON" button highlight when any item is hidden
+  var allBtn = document.getElementById('visAllBtn');
+  if (allBtn) {
+    var anyHidden = S.hiddenItems && S.hiddenItems.size > 0;
+    allBtn.className = 'vis-all-btn' + (anyHidden ? ' has-hidden' : '');
+    allBtn.innerHTML = anyHidden
+      ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Show All (' + S.hiddenItems.size + ' hidden)'
+      : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> All ON';
+  }
+}
+
+/** Handle vis pill click: Ctrl+click = solo, plain click = toggle */
+function handleVisPillClick(e, itemId) {
+  e.stopPropagation();
+  if (e.ctrlKey || e.metaKey) {
+    soloItem(itemId);
+  } else {
+    toggleItemVis(itemId);
+  }
+}
+
+/** Internal: refresh pill UI without rebuilding from scratch (faster) */
+function _refreshVisFilterUI() {
+  renderCatFilterBar(); // full rebuild is fast enough at ~16 items
+}
+
+// legacy alias so any existing calls to setCatFilter don't crash
+function setCatFilter(catId) {
+  // No-op — system replaced by item visibility toggles
+  // If 'all' requested, just show everything
+  if (catId === 'all') showAllItems();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2934,8 +3044,8 @@ function showViewCtrlBar(){
 // EXPORT CURRENT VIEW AS PDF  (respects filter + label toggle)
 // ══════════════════════════════════════════════════════════════════
 function exportCurrentViewPDF(){
-  var catLabel=S.catFilter==='all'?'All Categories':
-    (DEFAULT_CATEGORIES.find(function(c){return c.id===S.catFilter;})||{label:S.catFilter}).label;
+  var hiddenCount = S.hiddenItems ? S.hiddenItems.size : 0;
+  var catLabel = hiddenCount > 0 ? hiddenCount + ' layer(s) hidden' : 'All layers visible';
   var labelState=S.showLabels?'Labels ON':'Labels OFF';
   hint('Exporting filtered view: '+catLabel+' / '+labelState+'…');
 
@@ -2963,22 +3073,16 @@ function exportCurrentViewPDF(){
     doc.text('Filter: '+catLabel+'  |  '+labelState+'  |  '+new Date().toLocaleDateString(),dw-6,14.5,{align:'right'});
     // Floor plan image
     doc.addImage(imgData,'JPEG',0,STRIP,dw,dh-STRIP,undefined,'FAST');
-    // Category legend strip at bottom if filtered
-    if(S.catFilter!=='all'){
-      var cat=DEFAULT_CATEGORIES.find(function(c){return c.id===S.catFilter;});
-      if(cat){
-        doc.setFillColor(255,255,255); doc.rect(0,dh-14,dw,14,'F');
-        doc.setFont('helvetica','bold'); doc.setFontSize(7);
-        doc.setTextColor(cat.color.replace('#','').length===6?
-          [parseInt(cat.color.slice(1,3),16),parseInt(cat.color.slice(3,5),16),parseInt(cat.color.slice(5,7),16)]:
-          [71,85,105]);
-        doc.text(cat.label+' — Work Category Filter Applied',6,dh-4.5);
-      }
+    // Legend strip at bottom if any items hidden
+    if(hiddenCount > 0){
+      doc.setFillColor(255,255,255); doc.rect(0,dh-14,dw,14,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      doc.setTextColor(71,85,105);
+      doc.text(hiddenCount + ' layer(s) hidden — visibility filter applied',6,dh-4.5);
     }
-    var safeFilter=S.catFilter.replace(/[^a-z0-9]/gi,'_');
     var fname='ryg_view_'+(APP.currentBuilding||'bld').replace(/\s/g,'_')
       +'_'+(APP.currentFloor||'flr')
-      +'_'+safeFilter
+      +(hiddenCount>0?'_filtered':'')
       +'_'+new Date().toISOString().slice(0,10)+'.pdf';
     doc.save(fname);
     hint('Filtered PDF saved: '+fname);
@@ -3060,22 +3164,10 @@ function updatePasteBtns(){
 
 var prevRenderOpts={
   showLabels:true, stroke:1.8, ptSize:7, opacity:0.2,
-  fontSize:9, lblBg:'#ffffff', lblAlpha:0.92, catFilter:'all'
+  fontSize:9, lblBg:'#ffffff', lblAlpha:0.92
 };
 
 function showExportPreview(){
-  // Populate category selector
-  var sel=document.getElementById('prevCatSel');
-  if(sel){
-    sel.innerHTML='<option value="all">All Categories</option>';
-    DEFAULT_CATEGORIES.forEach(function(cat){
-      var o=document.createElement('option');
-      o.value=cat.id; o.textContent=cat.label;
-      if(cat.id===S.catFilter) o.selected=true;
-      sel.appendChild(o);
-    });
-    sel.value=S.catFilter;
-  }
   // Sync controls from S.renderOpts
   var ro=S.renderOpts;
   setV('prevStroke',   ro.strokeWidth||1.8);
@@ -3087,6 +3179,12 @@ function showExportPreview(){
   document.getElementById('prevPtSizeVal').textContent=ro.ptSize||7;
   document.getElementById('prevOpacityVal').textContent=Math.round((ro.opacity||0.2)*100)+'%';
   document.getElementById('prevFontVal').textContent=ro.fontSize||9;
+  // Show current visibility state
+  var note=document.getElementById('prevHiddenNote');
+  if(note){
+    var hc=S.hiddenItems?S.hiddenItems.size:0;
+    note.textContent=hc>0?hc+' layer(s) hidden':'All layers visible';
+  }
   document.getElementById('prevOv').classList.add('open');
   setTimeout(updatePreview, 80);
 }
@@ -3106,7 +3204,6 @@ function readPrevOpts(){
   prevRenderOpts.fontSize=parseFloat(document.getElementById('prevFont').value)||9;
   prevRenderOpts.lblBg=document.getElementById('prevLblBg').value||'#ffffff';
   prevRenderOpts.lblAlpha=parseFloat(document.getElementById('prevLblAlpha').value)||0.92;
-  prevRenderOpts.catFilter=document.getElementById('prevCatSel').value||'all';
 }
 
 function updatePreview(){
@@ -3161,7 +3258,6 @@ function applyAndExportReport(){
 
 function applyPrevOptsToS(){
   S.showLabels=prevRenderOpts.showLabels;
-  S.catFilter=prevRenderOpts.catFilter;
   S.renderOpts.strokeWidth=prevRenderOpts.stroke;
   S.renderOpts.ptSize=prevRenderOpts.ptSize;
   S.renderOpts.opacity=prevRenderOpts.opacity;
@@ -3189,11 +3285,8 @@ function buildExportCanvasWithOpts(opts){
   var sy=(src2&&S.pdfH)?H/S.pdfH:1;
   var bs=Math.min(sx,sy);
   S.shapes.forEach(function(sh){
-    // Category filter from opts
-    var passFilter=opts.catFilter==='all'||
-      (sh.category?sh.category===opts.catFilter:
-        sh.rowKey?( getCatForItem(sh.rowKey)||{id:''}).id===opts.catFilter:false);
-    if(!passFilter) return;
+    // Respect current item-visibility toggles (hiddenItems)
+    if(!shapePassesFilter(sh)) return;
     drawShapeOnCtxWithOpts(c,sh,bs,sx,sy,opts);
   });
   return out;
@@ -3785,12 +3878,10 @@ window.addEventListener('load',()=>{
           </div>
         </div>
         <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Filter</div>
-          <div class="prev-row">
-            <label>Category</label>
-            <select id="prevCatSel" onchange="updatePreview()" style="font-size:9px;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:#fff;flex:1">
-              <option value="all">All</option>
-            </select>
+          <div class="prev-ctrl-label">Layer Visibility</div>
+          <div class="prev-row" style="font-size:9px;color:var(--text3);line-height:1.5">
+            Visibility follows the<br>Layer Visibility bar above canvas.<br>
+            <span style="color:var(--accent);font-weight:700" id="prevHiddenNote"></span>
           </div>
         </div>
         <div class="prev-ctrl-group">
