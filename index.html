@@ -22,6 +22,21 @@
 }
 html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);font-family:'JetBrains Mono',monospace}
 
+/* ══ GAS SYNC SPINNER ══════════════════════════════════════════ */
+#gasSpinner{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.gas-spin-ring{width:38px;height:38px;border:3px solid rgba(37,99,235,.2);border-top-color:var(--accent);border-radius:50%;animation:gaspin .75s linear infinite}
+@keyframes gaspin{to{transform:rotate(360deg)}}
+.gas-spin-msg{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;letter-spacing:.04em}
+
+/* ══ GAS STATUS DOT (toolbar) ══════════════════════════════════ */
+.gas-status-wrap{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--bg2);cursor:pointer;transition:.13s;flex-shrink:0}
+.gas-status-wrap:hover{background:var(--bg3);border-color:var(--border2)}
+.gas-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s}
+.gas-dot.ok{background:var(--green);box-shadow:0 0 0 2px var(--gbg)}
+.gas-dot.busy{background:var(--accent);animation:gaspulse .9s ease-in-out infinite}
+.gas-dot.err{background:var(--red);box-shadow:0 0 0 2px var(--rbg)}
+@keyframes gaspulse{0%,100%{opacity:1}50%{opacity:.3}}
+
 /* ══ HOME ══ */
 #homeView{position:fixed;inset:0;background:var(--bg0);display:flex;flex-direction:column;z-index:100}
 #homeView.hide{display:none}
@@ -95,8 +110,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .sb{height:24px;background:var(--bg1);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 12px;flex-shrink:0;font-size:10px;color:var(--text3)}
 
 /* LEFT PANEL */
-.pl{width:290px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pl{width:290px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .2s ease}
+.pl.collapsed{width:32px}
+.pl.collapsed .pl-inner{display:none}
 .ph{padding:8px 11px;border-bottom:1px solid var(--border);background:var(--bg2);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.ph-collapse{margin-left:auto;cursor:pointer;padding:2px 4px;border-radius:3px;color:var(--text3);border:none;background:none;font-size:11px;line-height:1;transition:.12s;flex-shrink:0}
+.ph-collapse:hover{color:var(--text1);background:var(--bg3)}
+.pl.collapsed .ph{writing-mode:vertical-rl;text-orientation:mixed;padding:10px 7px;gap:0;font-size:9px;cursor:pointer;width:32px;justify-content:center}
+.pl.collapsed .ph-collapse{display:none}
 .pb{flex:1;overflow-y:auto;padding:7px}
 .pb::-webkit-scrollbar{width:3px}
 .pb::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
@@ -111,14 +132,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .bld-tab-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0}
 .bld-tab-dot.G{background:var(--green)} .bld-tab-dot.Y{background:#f59e0b} .bld-tab-dot.R{background:var(--red)}
 
-/* FLOOR TABS */
-.flr-tab-bar{display:flex;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg1);overflow-x:auto;min-height:30px}
-.flr-tab-bar::-webkit-scrollbar{height:2px}
+/* FLOOR TABS — scrollable with nav arrows */
+.flr-tab-wrap{display:flex;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg1);align-items:stretch;min-height:30px;position:relative}
+.flr-tab-bar{display:flex;flex:1;overflow-x:auto;min-height:30px;scroll-behavior:smooth}
+.flr-tab-bar::-webkit-scrollbar{height:0}
 .flr-tab{padding:4px 9px;font-size:9px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:.12s;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap;display:flex;align-items:center;gap:3px;flex-shrink:0}
 .flr-tab:hover{color:var(--text2);background:rgba(0,0,0,.02)}
 .flr-tab.on{color:var(--purple);border-bottom-color:var(--purple);background:rgba(124,58,237,.03)}
 .flr-tab-dot{width:5px;height:5px;border-radius:50%;background:var(--border2)}
 .flr-tab-dot.G{background:var(--green)} .flr-tab-dot.Y{background:#f59e0b} .flr-tab-dot.R{background:var(--red)}
+.flr-nav{width:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:12px;border:none;background:var(--bg2);transition:.12s;border-left:1px solid var(--border)}
+.flr-nav:first-child{border-left:none;border-right:1px solid var(--border)}
+.flr-nav:hover{background:var(--bg3);color:var(--text1)}
 
 /* FILTER */
 .filt{display:flex;gap:3px;padding:5px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
@@ -131,6 +156,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .fb.fy.on{background:rgba(180,83,9,.22)}
 .fb.fr{color:var(--red);border-color:var(--rbd);background:var(--rbg)}
 .fb.fr.on{background:rgba(220,38,38,.22)}
+
+/* ── UNDO button ── */
+.btn-undo{display:inline-flex;align-items:center;gap:3px;padding:4px 8px;border-radius:4px;border:1px solid var(--border2);background:#fff;color:var(--text2);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:.12s;position:relative}
+.btn-undo:hover:not(:disabled){background:var(--ybg);border-color:var(--ybd);color:var(--yellow)}
+.btn-undo:disabled{opacity:.35;cursor:not-allowed}
+.undo-badge{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;border-radius:7px;background:var(--yellow);color:#fff;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none}
+.undo-badge.show{display:flex}
+
+/* ── MULTI-SELECT ── */
+.si.multi-on{border-color:var(--purple);background:var(--pbg)}
+.multisel-bar{display:none;align-items:center;gap:6px;padding:5px 8px;background:var(--pbg);border-bottom:1px solid var(--pbd);font-size:9px;color:var(--purple);font-weight:700;flex-shrink:0}
+.multisel-bar.show{display:flex}
+.multisel-bar button{padding:2px 7px;border-radius:3px;border:1px solid var(--pbd);background:var(--pbg);color:var(--purple);font-size:8px;font-weight:700;cursor:pointer}
+.multisel-bar button:hover{background:rgba(124,58,237,.18)}
+.multisel-bar .ms-del{border-color:var(--rbd);color:var(--red);background:var(--rbg)}
+.multisel-bar .ms-del:hover{background:rgba(220,38,38,.18)}
+
+/* ── LABEL CODE REPORT ── */
+.lcg-group{border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:8px}
+.lcg-header{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);cursor:pointer;user-select:none;transition:.12s}
+.lcg-header:hover{background:var(--bg3)}
+.lcg-code{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0}
+.lcg-meta{display:flex;gap:8px;font-size:8.5px;color:var(--text2);flex:1;flex-wrap:wrap}
+.lcg-meta span{font-family:'JetBrains Mono',monospace}
+.lcg-pct{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0;min-width:36px;text-align:right}
+.lcg-bar{width:60px;height:6px;background:var(--bg3);border-radius:3px;flex-shrink:0;overflow:hidden}
+.lcg-bar.sm{width:40px;height:4px}
+.lcg-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.lcg-body{border-top:1px solid var(--border)}
+.lcg-body.lcg-collapsed{display:none}
+.lcg-row{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid var(--border);font-size:8.5px}
+.lcg-row:last-child{border-bottom:none}
+.lcg-row:nth-child(even){background:var(--bg3)}
+.lcg-lbl{flex:1;font-family:'JetBrains Mono',monospace;color:var(--text1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcg-meas{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:8px;white-space:nowrap;flex-shrink:0}
+.lcg-row-pct{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;flex-shrink:0;min-width:32px;text-align:right;color:var(--text2)}
+.qs-sel-row{display:none;align-items:center;gap:5px;padding:4px 0;border-top:1px dashed var(--pbd);margin-top:4px}
+.qs-sel-row.show{display:flex}
+.qs-sel-label{font-size:8px;color:var(--purple);font-weight:700;width:64px;flex-shrink:0}
+.qs-sel-val{font-size:10px;color:var(--purple);font-weight:700;flex:1}
 
 /* CSA ITEMS */
 .ci{padding:7px 9px;border-radius:5px;margin-bottom:3px;border:1px solid var(--border);transition:.12s;background:#fff}
@@ -404,6 +469,15 @@ td.hi{color:var(--accent);font-weight:700}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Import
     </button>
+    <label class="hv-btn secondary" title="นำเข้าจากไฟล์ .ryg" style="cursor:pointer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Import File
+      <input type="file" accept=".ryg,.json" style="display:none" onchange="importProjectFile(this)">
+    </label>
+    <button class="hv-btn secondary" onclick="exportAllProjectsFile()" title="บันทึกทุกโครงการเป็นไฟล์ .ryg">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
+      Export All
+    </button>
     <button class="hv-btn primary" onclick="showNewProjectModal()" style="margin-left:6px">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       New Project
@@ -466,8 +540,20 @@ td.hi{color:var(--accent);font-weight:700}
   <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text2);cursor:pointer"><input type="checkbox" id="snapChk" checked onchange="S.snapOn=this.checked;draw()" style="accent-color:var(--accent)">Snap</label>
   <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--yellow);cursor:pointer"><input type="checkbox" id="axisChk" onchange="S.axisLock=this.checked;updateAxisBadge();draw()" style="accent-color:var(--yellow)">H/V</label>
   <div class="sp"></div>
+  <button class="btn-undo" id="undoBtn" onclick="undoHistory()" title="Undo last action (Ctrl+Z)" disabled>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+    Undo
+    <span class="undo-badge" id="undoBadge"></span>
+  </button>
+  <!-- GAS Sync status indicator -->
+  <div class="gas-status-wrap" id="gasStatusWrap" onclick="manualGasSync()" title="Google Sheets Sync — คลิกเพื่อ Pull ข้อมูลล่าสุด">
+    <span class="gas-dot busy" id="gasStatusDot"></span>
+    <span id="gasStatusTxt" style="font-size:8px;color:var(--text2);white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis">กำลังเชื่อมต่อ…</span>
+  </div>
   <button class="btn grn" onclick="showReport()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>Report</button>
-  <button class="btn pur" onclick="showSyncModal()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>Sync / Share</button>
+  <button class="btn" onclick="showLabelCodeReport()" style="background:var(--pbg);border:1px solid var(--pbd);color:var(--purple)" title="Export report grouped by Label Code"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>By Code</button>
+  <button class="btn pur" onclick="showShareModal()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+  <button class="btn" onclick="exportProjectFile()" title="บันทึกโครงการเป็นไฟล์ .ryg (สำรองข้อมูล)" style="background:var(--gbg);border:1px solid var(--gbd);color:var(--green)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save File</button>
   <button class="btn" style="background:var(--bg2);border-color:var(--border2);color:var(--text2)" onclick="showSettings()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Settings</button>
   <div style="position:relative" id="exportWrap">
     <button class="btn pur" style="background:var(--pbg);gap:0;padding:5px 0" onclick="toggleExportMenu()">
@@ -503,10 +589,14 @@ td.hi{color:var(--accent);font-weight:700}
 </div>
 
 <div class="view-ctrl-bar" id="viewCtrlBar" style="display:none">
-  <span class="vc-label">Labels</span>
-  <button class="vc-btn lbl-on" id="labelToggleBtn" onclick="toggleLabels()" title="Toggle shape labels on/off">
+  <span class="vc-label">Display</span>
+  <button class="vc-btn lbl-on" id="labelToggleBtn" onclick="toggleLabels()" title="Toggle shape name labels">
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 6l4-4 14 14-4 4L1 6z"/><path d="M14 2l8 8"/><path d="M5 17l-4 4"/></svg>
     Labels ON
+  </button>
+  <button class="vc-btn lbl-on" id="tagToggleBtn" onclick="toggleTags()" title="Toggle measurement tag boxes on canvas">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    Tags ON
   </button>
   <div class="vc-sep"></div>
   <span class="vc-label">Layer Visibility</span>
@@ -527,16 +617,30 @@ td.hi{color:var(--accent);font-weight:700}
 </div>
 <div class="ws">
 <!-- LEFT PANEL -->
-<div class="pl">
-  <div class="ph" style="padding:7px 11px">
+<div class="pl" id="leftPanel">
+  <div class="ph" onclick="toggleLeftPanel()" title="Click to collapse/expand">
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <span>CSA Tracking</span>
-    <span id="bldItemCount" style="margin-left:auto;font-size:8px;color:var(--purple);font-weight:400"></span>
+    <span id="bldItemCount" style="font-size:8px;color:var(--purple);font-weight:400"></span>
+    <button class="ph-collapse" id="plCollapseBtn" onclick="event.stopPropagation();toggleLeftPanel()" title="Collapse panel">‹</button>
   </div>
+  <div class="pl-inner" id="plInner" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
   <!-- Building tabs -->
   <div class="bld-tab-bar" id="bldTabBar"></div>
-  <!-- Floor tabs -->
-  <div class="flr-tab-bar" id="flrTabBar"></div>
+  <!-- Floor tabs with scroll arrows -->
+  <div class="flr-tab-wrap">
+    <button class="flr-nav" onclick="scrollFlrTabs(-1)" title="Scroll left">‹</button>
+    <div class="flr-tab-bar" id="flrTabBar"></div>
+    <button class="flr-nav" onclick="scrollFlrTabs(1)" title="Scroll right">›</button>
+  </div>
+  <!-- Multi-select action bar -->
+  <div class="multisel-bar" id="multiSelBar">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span id="multiSelCount">0 shapes selected</span>
+    <button onclick="selectAllVisible()">All</button>
+    <button onclick="clearMultiSel()">Clear</button>
+    <button class="ms-del" onclick="deleteSelected()">Delete</button>
+  </div>
   <!-- Filter -->
   <div class="filt">
     <button class="fb all on" onclick="setFilt('all',this)">ALL</button>
@@ -545,6 +649,7 @@ td.hi{color:var(--accent);font-weight:700}
     <button class="fb fr" onclick="setFilt('R',this)">✕ Behind</button>
   </div>
   <div class="pb" id="csaList"></div>
+  </div><!-- /pl-inner -->
 </div>
 
 <!-- CANVAS -->
@@ -661,12 +766,25 @@ td.hi{color:var(--accent);font-weight:700}
       <div id="csl" style="padding:6px"><div id="sl"><div class="empty">Draw shapes above.</div></div></div>
     </div>
     <div class="card">
-      <div class="ch"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Quick Stats</div>
+      <div class="ch"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Quick Stats <span id="qsTitle" style="font-weight:400;color:var(--text3);font-size:8px;margin-left:4px">— All</span></div>
       <div class="cb">
         <div class="row"><span class="lbl">Total Area</span><span class="val" id="qsa" style="color:var(--accent);font-weight:700">0.00 m²</span></div>
         <div class="row"><span class="lbl">Length</span><span class="val" id="qsl" style="color:var(--accent);font-weight:700">0.00 m</span></div>
         <div class="row"><span class="lbl">Count</span><span class="val" id="qsc">0</span></div>
         <div class="row"><span class="lbl">Scale</span><span class="val" id="qss" style="font-size:9px">Uncalibrated</span></div>
+        <!-- Selection stats (shown when shapes are multi-selected) -->
+        <div class="qs-sel-row" id="qsSelRow">
+          <span class="qs-sel-label">Sel. Area</span><span class="qs-sel-val" id="qsSelA">—</span>
+        </div>
+        <div class="qs-sel-row" id="qsSelRow2">
+          <span class="qs-sel-label">Sel. Length</span><span class="qs-sel-val" id="qsSelL">—</span>
+        </div>
+        <div class="qs-sel-row" id="qsSelRow3">
+          <span class="qs-sel-label">Sel. Count</span><span class="qs-sel-val" id="qsSelC">—</span>
+        </div>
+        <div class="qs-sel-row" id="qsSelRow4">
+          <span class="qs-sel-label">Sel. Shapes</span><span class="qs-sel-val" id="qsSelN">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -706,13 +824,28 @@ td.hi{color:var(--accent);font-weight:700}
   <div class="modal" style="width:500px">
     <div class="mh"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="mt">Import Project</span><button class="mx" onclick="closeModal('importOv')">✕</button></div>
     <div class="mb" style="padding:16px 18px">
-      <p class="share-note">Paste a project code or share URL. Floor plan images are included in the share code.</p>
-      <textarea class="share-code" id="importCode" style="min-height:80px;margin-top:8px" placeholder="Paste project code or share URL here…"></textarea>
+      <!-- File Import -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">📁 นำเข้าจากไฟล์ .ryg</div>
+      <p class="share-note">ไฟล์ .ryg คือไฟล์สำรองข้อมูลจากการกด Export File รวม floor plan PDF ด้วย</p>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px 12px;border:2px dashed var(--border2);border-radius:7px;cursor:pointer;background:var(--bg2);transition:.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span style="font-size:10px;color:var(--text2)">คลิกเพื่อเลือกไฟล์ .ryg</span>
+        <input type="file" accept=".ryg,.json" style="display:none" onchange="importProjectFile(this)">
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:9px;color:var(--text3)">หรือ</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <!-- Code paste -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">📋 นำเข้าจาก Share Code / URL</div>
+      <p class="share-note">วาง project code หรือ share URL ที่ได้จากเพื่อนร่วมทีม</p>
+      <textarea class="share-code" id="importCode" style="min-height:70px;margin-top:6px" placeholder="วาง project code หรือ share URL ที่นี่…"></textarea>
       <div id="importMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
     </div>
     <div class="mf">
       <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('importOv')">Cancel</button>
-      <button class="pbtn" style="background:var(--rbg);color:var(--red);border:1px solid var(--rbd)" onclick="doImport()">Load Project</button>
+      <button class="pbtn" style="background:var(--rbg);color:var(--red);border:1px solid var(--rbd)" onclick="doImport()">Load from Code</button>
     </div>
   </div>
 </div>
@@ -799,6 +932,364 @@ td.hi{color:var(--accent);font-weight:700}
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════
+// GOOGLE APPS SCRIPT BACKEND — ลิงก์ Web App ของคุณ
+// ══════════════════════════════════════════════════════════════════
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYksnXvzEIX-e51cOWdD9nM__BJ3NoS9rxajICB-nVlVPZeT-uze5KJ9XqfDGfU8nmxQ/exec";
+const PDF_CACHE_KEY = 'rygfp_pdf_cache_v1';
+
+// ── Loading Spinner ────────────────────────────────────────────────
+let _spinCount = 0;
+function showSpinner(msg) {
+  _spinCount++;
+  const el = document.getElementById('gasSpinner');
+  if (!el) return;
+  el.querySelector('.gas-spin-msg').textContent = msg || 'กำลังซิงค์ข้อมูล…';
+  el.style.display = 'flex';
+}
+function hideSpinner() {
+  _spinCount = Math.max(0, _spinCount - 1);
+  if (_spinCount > 0) return;
+  const el = document.getElementById('gasSpinner');
+  if (el) el.style.display = 'none';
+}
+
+// ── GAS sync-status indicator (dot in toolbar) ─────────────────────
+function setGasStatus(state, msg) {
+  const dot = document.getElementById('gasStatusDot');
+  const txt = document.getElementById('gasStatusTxt');
+  if (!dot || !txt) return;
+  dot.className = 'gas-dot ' + (state || '');
+  txt.textContent = msg || '';
+  txt.title = msg || '';
+}
+
+// ── PDF cache (localStorage — pdfDataUrl too large for Sheets) ────
+function savePdfCache() {
+  const cache = {};
+  APP.projects.forEach(p => {
+    Object.entries(p.buildings || {}).forEach(([bk, bld]) => {
+      Object.entries(bld.floors || {}).forEach(([fk, fld]) => {
+        if (fld.pdfDataUrl) {
+          cache[`${p.id}::${bk}::${fk}`] = {
+            pdfDataUrl: fld.pdfDataUrl,
+            origPdfW: fld.origPdfW || 0,
+            origPdfH: fld.origPdfH || 0
+          };
+        }
+      });
+    });
+  });
+  try { localStorage.setItem(PDF_CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
+}
+function loadPdfCache() {
+  try { return JSON.parse(localStorage.getItem(PDF_CACHE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function mergePdfCache(projects) {
+  const cache = loadPdfCache();
+  projects.forEach(p => {
+    Object.entries(p.buildings || {}).forEach(([bk, bld]) => {
+      Object.entries(bld.floors || {}).forEach(([fk, fld]) => {
+        const key = `${p.id}::${bk}::${fk}`;
+        if (cache[key]) {
+          fld.pdfDataUrl = cache[key].pdfDataUrl;
+          if (!fld.origPdfW) fld.origPdfW = cache[key].origPdfW;
+          if (!fld.origPdfH) fld.origPdfH = cache[key].origPdfH;
+          fld.hasBg = true;
+        }
+      });
+    });
+  });
+}
+
+// ── Strip pdfDataUrl before sending to GAS (payload too large) ────
+function _stripPdf(projects) {
+  return projects.map(p => ({
+    ...p,
+    buildings: Object.fromEntries(
+      Object.entries(p.buildings || {}).map(([k, b]) => [k, {
+        ...b,
+        floors: Object.fromEntries(
+          Object.entries(b.floors || {}).map(([fk, fv]) => [fk, {
+            ...fv, pdfDataUrl: null, hasBg: !!(fv.pdfDataUrl || fv.hasBg)
+          }])
+        )
+      }])
+    )
+  }));
+}
+
+// ── Save to localStorage (immediate, keeps PDF too) ───────────────
+function _saveLocalStorage() {
+  try {
+    const slim = _stripPdf(APP.projects);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+    savePdfCache();
+  } catch(e) { console.warn('localStorage full:', e); }
+}
+
+// ── Push all projects to GAS Web App ─────────────────────────────
+async function _pushToGAS() {
+  if (!GOOGLE_SCRIPT_URL) return;
+  try {
+    setGasStatus('busy', 'กำลังบันทึก…');
+    const resp = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'save_all', projects: _stripPdf(APP.projects) })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'GAS error');
+    const t = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setGasStatus('ok', 'บันทึกแล้ว ' + t);
+  } catch(err) {
+    console.warn('[GAS] Push failed:', err.message);
+    setGasStatus('err', 'Sync ล้มเหลว — ข้อมูลอยู่ใน localStorage');
+  }
+}
+
+// ── Pull all projects from GAS Web App ────────────────────────────
+async function _pullFromGAS() {
+  if (!GOOGLE_SCRIPT_URL) return false;
+  try {
+    setGasStatus('busy', 'กำลังโหลด…');
+    showSpinner('กำลังโหลดข้อมูลจาก Google Sheets…');
+    const resp = await fetch(GOOGLE_SCRIPT_URL + '?action=load&t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'GAS error');
+    if (Array.isArray(data.projects) && data.projects.length > 0) {
+      APP.projects = data.projects;
+      mergePdfCache(APP.projects);
+      _saveLocalStorage();
+      const t = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setGasStatus('ok', 'โหลดแล้ว ' + t);
+      hideSpinner();
+      return true;
+    }
+    hideSpinner();
+    setGasStatus('ok', 'ไม่พบข้อมูลใน Sheets — ใช้ข้อมูลในเครื่อง');
+    return false;
+  } catch(err) {
+    console.warn('[GAS] Pull failed:', err.message);
+    setGasStatus('err', 'โหลดไม่สำเร็จ — ใช้ข้อมูล localStorage');
+    hideSpinner();
+    return false;
+  }
+}
+
+// ── Manual sync (คลิกที่ status dot) ─────────────────────────────
+async function manualGasSync() {
+  if (!GOOGLE_SCRIPT_URL) { alert('ยังไม่ได้ตั้งค่า GOOGLE_SCRIPT_URL'); return; }
+  saveFloorState();
+  _saveLocalStorage();
+  const pulled = await _pullFromGAS();
+  if (pulled) {
+    renderHome();
+    if (APP.view === 'editor') {
+      await loadFloorState();
+      renderBldTabs(); renderFloorTabs(); renderCSA(); refreshShapes(); updateStats();
+      renderCatFilterBar(); _refreshMultiSelUI(); draw();
+      hint('ดึงข้อมูลจาก Google Sheets สำเร็จ');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UNDO HISTORY
+// ══════════════════════════════════════════════════════════════════
+const UNDO_MAX = 60;
+var _history = [];  // array of {shapes, manuals} snapshots
+var _historyIdx = -1; // pointer into _history (current state = _historyIdx)
+
+/** Call before any mutating action to snapshot current state */
+function pushHistory() {
+  const snap = {
+    shapes: JSON.parse(JSON.stringify(S.shapes)),
+    manuals: JSON.parse(JSON.stringify(S.manuals))
+  };
+  // Truncate redo branch
+  _history = _history.slice(0, _historyIdx + 1);
+  _history.push(snap);
+  if (_history.length > UNDO_MAX) _history.shift();
+  _historyIdx = _history.length - 1;
+  _updateUndoBtn();
+}
+
+/** Undo one step */
+function undoHistory() {
+  if (_historyIdx <= 0) return;
+  _historyIdx--;
+  const snap = _history[_historyIdx];
+  S.shapes = JSON.parse(JSON.stringify(snap.shapes));
+  S.manuals = JSON.parse(JSON.stringify(snap.manuals));
+  S.sel = null; S.multiSel = [];
+  showProps(null); refreshShapes(); updateStats(); renderCSA(); draw();
+  _updateUndoBtn();
+  hint('Undo — ' + (_history.length - 1 - _historyIdx) + ' step(s) available');
+}
+
+function _updateUndoBtn() {
+  var btn = document.getElementById('undoBtn');
+  var badge = document.getElementById('undoBadge');
+  if (!btn) return;
+  var canUndo = _historyIdx > 0;
+  btn.disabled = !canUndo;
+  if (badge) {
+    var count = _historyIdx;
+    badge.textContent = count > 0 ? count : '';
+    badge.className = 'undo-badge' + (count > 0 ? ' show' : '');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MULTI-SELECT
+// ══════════════════════════════════════════════════════════════════
+// S.multiSel = [] is declared in makeFloorState / initialised below
+
+/** Toggle shape into/out of multi-selection */
+function toggleMultiSel(id) {
+  if (!S.multiSel) S.multiSel = [];
+  var idx = S.multiSel.indexOf(id);
+  if (idx >= 0) S.multiSel.splice(idx, 1);
+  else S.multiSel.push(id);
+  _refreshMultiSelUI();
+  draw();
+}
+
+/** Select all currently visible shapes */
+function selectAllVisible() {
+  S.multiSel = S.shapes.filter(shapePassesFilter).map(s => s.id);
+  _refreshMultiSelUI();
+  draw();
+}
+
+/** Clear multi-select */
+function clearMultiSel() {
+  S.multiSel = [];
+  _refreshMultiSelUI();
+  draw();
+}
+
+/** Delete all shapes in multiSel */
+function deleteSelected() {
+  if (!S.multiSel || !S.multiSel.length) return;
+  if (!confirm('Delete ' + S.multiSel.length + ' selected shapes?')) return;
+  pushHistory();
+  var ids = new Set(S.multiSel);
+  S.shapes = S.shapes.filter(s => !ids.has(s.id));
+  S.sel = null; S.multiSel = [];
+  _refreshMultiSelUI(); refreshShapes(); updateStats(); renderCSA(); renderFloorTabs(); draw();
+  saveFloorState(); saveProjects();
+  hint(ids.size + ' shapes deleted');
+}
+
+/** Refresh the multi-select bar and sidebar highlights */
+function _refreshMultiSelUI() {
+  var bar = document.getElementById('multiSelBar');
+  var cnt = document.getElementById('multiSelCount');
+  var n = S.multiSel ? S.multiSel.length : 0;
+  if (bar) bar.className = 'multisel-bar' + (n > 0 ? ' show' : '');
+  if (cnt) cnt.textContent = n + ' shape' + (n !== 1 ? 's' : '') + ' selected';
+  // Update selection stats in Quick Stats
+  _updateSelStats();
+}
+
+/** Compute and display selection stats */
+function _updateSelStats() {
+  var n = S.multiSel ? S.multiSel.length : 0;
+  var show = n > 0;
+  ['qsSelRow','qsSelRow2','qsSelRow3','qsSelRow4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.className = 'qs-sel-row' + (show ? ' show' : '');
+  });
+  var qs = document.getElementById('qsTitle');
+  if (qs) qs.textContent = show ? '— Selection (' + n + ')' : '— All';
+  if (!show) return;
+
+  var selShapes = S.shapes.filter(s => S.multiSel.includes(s.id));
+  var totalArea = 0, totalLen = 0, totalCnt = 0;
+  var areaShapes = 0, lenShapes = 0, cntShapes = 0;
+  selShapes.forEach(function(sh) {
+    var m = measure(sh);
+    if (sh.type === 'polygon')      { totalArea += m.raw; areaShapes++; }
+    else if (sh.type === 'polyline'){ totalLen  += m.raw; lenShapes++; }
+    else                             { totalCnt  += m.raw; cntShapes++; }
+  });
+
+  var saEl = document.getElementById('qsSelA');
+  var slEl = document.getElementById('qsSelL');
+  var scEl = document.getElementById('qsSelC');
+  var snEl = document.getElementById('qsSelN');
+  if (saEl) saEl.textContent = areaShapes > 0 ? totalArea.toFixed(2) + ' m² (' + areaShapes + ')' : '—';
+  if (slEl) slEl.textContent = lenShapes  > 0 ? totalLen.toFixed(2)  + ' m ('  + lenShapes  + ')' : '—';
+  if (scEl) scEl.textContent = cntShapes  > 0 ? totalCnt + ' pt ('  + cntShapes + ')'             : '—';
+  if (snEl) snEl.textContent = n + ' shape' + (n !== 1 ? 's' : '') + ' selected';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEFT PANEL COLLAPSE
+// ══════════════════════════════════════════════════════════════════
+var _panelCollapsed = false;
+function toggleLeftPanel() {
+  _panelCollapsed = !_panelCollapsed;
+  var pl = document.getElementById('leftPanel');
+  var btn = document.getElementById('plCollapseBtn');
+  if (!pl) return;
+  pl.classList.toggle('collapsed', _panelCollapsed);
+  if (btn) btn.textContent = _panelCollapsed ? '›' : '‹';
+  // Trigger canvas resize after transition
+  setTimeout(function(){ if(typeof resize === 'function') resize(); }, 220);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLOOR TAB SCROLL
+// ══════════════════════════════════════════════════════════════════
+function scrollFlrTabs(dir) {
+  var bar = document.getElementById('flrTabBar');
+  if (bar) bar.scrollLeft += dir * 90;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SHARE MODAL alias
+// ══════════════════════════════════════════════════════════════════
+function showShareModal() {
+  // Reset share fields
+  var so = document.getElementById('shareOut');
+  var sub = document.getElementById('shareUrlBox');
+  var msg = document.getElementById('shareMsg');
+  var clb = document.getElementById('copyLinkBtn');
+  var csb = document.getElementById('copyShareBtn');
+  if (so) so.value = '';
+  if (sub) sub.value = '';
+  if (msg) msg.textContent = '';
+  if (clb) clb.disabled = true;
+  if (csb) csb.disabled = true;
+  // Populate GAS URL display
+  var urlEl = document.getElementById('gasUrlDisplay');
+  if (urlEl) urlEl.textContent = GOOGLE_SCRIPT_URL || '(ยังไม่ตั้งค่า)';
+  updateGasModalStatus();
+  document.getElementById('syncOv').classList.add('open');
+}
+
+/** Sync the modal's status dot with the toolbar dot */
+function updateGasModalStatus() {
+  var dot2 = document.getElementById('gasStatusDot2');
+  var dot1 = document.getElementById('gasStatusDot');
+  var stEl = document.getElementById('gasModalStatus');
+  if (dot2 && dot1) dot2.className = dot1.className;
+  if (stEl && dot1) {
+    var cls = dot1.className;
+    if (cls.includes('ok'))   stEl.textContent = 'สถานะ: ✓ เชื่อมต่อสำเร็จ — ' + (document.getElementById('gasStatusTxt')?.textContent || '');
+    if (cls.includes('busy')) stEl.textContent = 'สถานะ: ⏳ กำลังซิงค์…';
+    if (cls.includes('err'))  stEl.textContent = 'สถานะ: ✕ Sync ล้มเหลว — ตรวจสอบ URL หรือ permission';
+    if (!cls.includes('ok') && !cls.includes('busy') && !cls.includes('err'))
+      stEl.textContent = 'สถานะ: กำลังเชื่อมต่อ…';
+  }
+}
+// Legacy alias
+function showSyncModal() { showShareModal(); }
 // ══════════════════════════════════════════════════════════════════
 // DEFAULT TEMPLATES
 // ══════════════════════════════════════════════════════════════════
@@ -943,8 +1434,10 @@ const S={
   pdfOff:null, pdfW:0, pdfH:0, hasBg:false, pdfDataUrl:null,
   pdfDoc:null, pageNum:1, totalPages:1,
   filter:'all',
-  showLabels:true,        // toggle label visibility
-  hiddenItems: new Set(), // set of rowKey IDs whose shapes are hidden on canvas
+  showLabels:true,
+  showTags:true,          // toggle measurement tag boxes on canvas
+  hiddenItems: new Set(),
+  multiSel: [],
   clipboard:null,            // copied shape (full clone)
   propClipboard:null,        // copied properties only
   // Render style overrides (for preview & export)
@@ -961,24 +1454,28 @@ const S={
 function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16);});}
 
 // ══════════════════════════════════════════════════════════════════
-// STORAGE
+// STORAGE — localStorage (cache) + Google Sheets (cloud primary)
 // ══════════════════════════════════════════════════════════════════
-function loadProjects(){
-  try{const r=localStorage.getItem(STORAGE_KEY);if(r)APP.projects=JSON.parse(r);}catch(e){APP.projects=[];}
+
+/** Load: ① localStorage ทันที → render → ② GAS pull → merge → re-render */
+async function loadProjects() {
+  try {
+    const r = localStorage.getItem(STORAGE_KEY);
+    if (r) {
+      APP.projects = JSON.parse(r);
+      mergePdfCache(APP.projects); // re-inject PDF images from cache
+    }
+  } catch(e) { APP.projects = []; }
+  renderHome(); // แสดงข้อมูล localStorage ก่อน (instant)
+  const pulled = await _pullFromGAS(); // ดึง GAS (async)
+  if (pulled) renderHome();            // refresh ถ้ามีข้อมูลใหม่จาก Sheets
 }
-function saveProjects(){
-  saveFloorState(); // sync live state
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(APP.projects));}catch(e){
-    console.warn('Storage full — trying without pdfDataUrl');
-    try{
-      const slim=APP.projects.map(p=>({...p,buildings:Object.fromEntries(
-        Object.entries(p.buildings).map(([k,b])=>[k,{...b,floors:Object.fromEntries(
-          Object.entries(b.floors).map(([fk,fv])=>[fk,{...fv,pdfDataUrl:null}])
-        )}])
-      )}));
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(slim));
-    }catch(e2){console.error('Cannot save:',e2);}
-  }
+
+/** Save: ① localStorage ทันที → ② push GAS async (non-blocking) */
+function saveProjects() {
+  saveFloorState();     // sync canvas → memory
+  _saveLocalStorage();  // บันทึก localStorage ทันที
+  _pushToGAS();         // async push → GAS (ไม่ block UI)
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1199,9 +1696,12 @@ async function openProject(id){
   APP.currentBuilding=proj.activeBuilding&&proj.buildings[proj.activeBuilding]?proj.activeBuilding:bldNames[0];
   const bld=proj.buildings[APP.currentBuilding];
   APP.currentFloor=bld?.activeFloor&&bld.floors[bld.activeFloor]?bld.activeFloor:Object.keys(bld?.floors||{})[0]||null;
+  S.multiSel=[]; _history=[]; _historyIdx=-1;
   await loadFloorState();
   showEditor();
-  renderBldTabs(); renderFloorTabs(); renderCSA(); refreshShapes(); updateStats(); draw();
+  renderBldTabs(); renderFloorTabs(); renderCSA(); refreshShapes(); updateStats();
+  renderCatFilterBar(); _refreshMultiSelUI(); _updateUndoBtn(); draw();
+  pushHistory(); // baseline snapshot
 }
 function deleteProject(id){
   if(!confirm('Delete this project? This cannot be undone.'))return;
@@ -1242,9 +1742,10 @@ async function switchBuilding(name){
   if(APP.cp)APP.cp.activeBuilding=name;
   const bld=APP.cp?.buildings[name];
   APP.currentFloor=bld?.activeFloor&&bld.floors[bld.activeFloor]?bld.activeFloor:Object.keys(bld?.floors||{})[0]||null;
-  S.hiddenItems=new Set(); // reset visibility on building change
+  S.hiddenItems=new Set(); S.multiSel=[]; _history=[]; _historyIdx=-1;
   await loadFloorState();
-  renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();renderCatFilterBar();draw();
+  renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();renderCatFilterBar();
+  _refreshMultiSelUI(); _updateUndoBtn(); draw();
   hint('Building: '+name+'  ·  Floor: '+(APP.currentFloor||'—'));
 }
 async function switchFloor(name){
@@ -1252,10 +1753,11 @@ async function switchFloor(name){
   saveFloorState();
   APP.currentFloor=name;
   const bld=getCurrentBldData();if(bld)bld.activeFloor=name;
-  S.hiddenItems=new Set(); // reset visibility on floor change
+  S.hiddenItems=new Set(); S.multiSel=[]; _history=[]; _historyIdx=-1;
   await loadFloorState();
   renderFloorTabs();renderCSA();refreshShapes();updateStats();
-  renderCatFilterBar(); draw();
+  renderCatFilterBar(); _refreshMultiSelUI(); _updateUndoBtn(); draw();
+  pushHistory(); // initial snapshot for this floor
   hint('Floor: '+name+' loaded');
 }
 
@@ -1372,6 +1874,7 @@ function renderHome(){
         <div class="pc-drop" id="drop_${proj.id}">
           <div class="pcd-item" onclick="renameProjectById('${proj.id}');closeAllDrops()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Rename</div>
           <div class="pcd-item" onclick="duplicateProject('${proj.id}');closeAllDrops()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplicate</div>
+          <div class="pcd-item" style="color:var(--accent)" onclick="exportProjectFile('${proj.id}');closeAllDrops()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export File (.ryg)</div>
           <div class="pcd-item danger" onclick="deleteProject('${proj.id}');closeAllDrops()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete</div>
         </div>
       </div>
@@ -1610,6 +2113,21 @@ canvas.addEventListener('mousedown',e=>{
   if(needsAxisLock())wp=applyAxisLock(wp.x,wp.y);
 
   if(S.tool==='select'){
+    // Shift+click = multi-select
+    if(e.shiftKey){
+      var wpS=c2w(mp.x,mp.y);
+      for(var si=S.shapes.length-1;si>=0;si--){
+        var ssh=S.shapes[si];
+        if(!shapePassesFilter(ssh)) continue;
+        var hit=false;
+        if(ssh.type==='point'){var cpS=w2c(ssh.pts[0].x,ssh.pts[0].y);hit=Math.hypot(mp.x-cpS.x,mp.y-cpS.y)<12;}
+        else if(ssh.type==='polygon'){hit=ptInPoly(wpS.x,wpS.y,ssh.pts);}
+        else{hit=nearLine(wpS,ssh.pts,8/S.zoom);}
+        if(hit){toggleMultiSel(ssh.id);refreshShapes();return;}
+      }
+      return;
+    }
+    // Ctrl+A = select all (handled in keydown below)
     // Check vertex handle first (on selected polygon/polyline)
     if(S.sel&&(S.sel.type==='polygon'||S.sel.type==='polyline')){
       const vIdx=hitVertex(mp.x,mp.y,S.sel);
@@ -1627,6 +2145,7 @@ canvas.addEventListener('mousedown',e=>{
       S.dragStartPts=S.sel.pts.map(p=>({...p}));
       return;
     }
+    clearMultiSel();
     pickShape(mp.x,mp.y);
   }
   else if(S.tool==='move'){
@@ -1692,6 +2211,7 @@ canvas.addEventListener('mousemove',e=>{
 canvas.addEventListener('mouseup',e=>{
   if(S.isPan){S.isPan=false;document.getElementById('cw').classList.remove('panning');return;}
   if(S.isDragMove||S.isDragVertex){
+    pushHistory();
     S.isDragMove=false; S.isDragVertex=false; S.dragVertexIdx=-1;
     S.dragStartMouse=null; S.dragStartPts=null;
     updateStats(); refreshShapes(); renderCSA(); saveFloorState(); draw();
@@ -1701,6 +2221,7 @@ canvas.addEventListener('mouseup',e=>{
   if(S.tool==='rect'&&S.rectStart&&S.rectEnd){
     const a=S.rectStart, b=S.rectEnd;
     if(Math.abs(b.x-a.x)>2&&Math.abs(b.y-a.y)>2){
+      pushHistory();
       const sh={
         id:nextId(), type:'polygon',
         pts:[{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}],
@@ -1737,11 +2258,18 @@ document.addEventListener('keydown',e=>{
     if(e.key==='v'&&S.clipboard){e.preventDefault();pasteShape();}
     if(e.key==='d'&&S.sel){e.preventDefault();duplicateShape();}
   }
-  if(e.key==='Escape'){S.pts=[];S.drawing=false;draw();}
-  if((e.key==='Delete'||e.key==='Backspace')&&!e.target.matches('input,textarea'))delShape();
+  if(e.key==='Escape'){S.pts=[];S.drawing=false;clearMultiSel();draw();}
+  if((e.key==='Delete'||e.key==='Backspace')&&!e.target.matches('input,textarea')){
+    if(S.multiSel&&S.multiSel.length>1) deleteSelected();
+    else delShape();
+  }
   if((e.key==='='||e.key==='+')&&e.ctrlKey){e.preventDefault();doZoom(1.2);}
   if(e.key==='-'&&e.ctrlKey){e.preventDefault();doZoom(1/1.2);}
   if(e.key==='0'&&e.ctrlKey){e.preventDefault();fitView();}
+  // Ctrl+Z = Undo
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.target.matches('input,textarea')){e.preventDefault();undoHistory();}
+  // Ctrl+A = Select all visible
+  if((e.ctrlKey||e.metaKey)&&e.key==='a'&&!e.target.matches('input,textarea')){e.preventDefault();selectAllVisible();refreshShapes();}
 });
 document.addEventListener('keyup',e=>{
   if(e.code==='Space'){S.spDown=false;document.getElementById('cw').style.cursor='';}
@@ -1782,6 +2310,7 @@ function resetCalib(){
 function nextId(){return S.shapes.length?Math.max(...S.shapes.map(s=>s.id))+1:1;}
 function finalize(type){
   let pts=[...S.pts];if(pts.length>1)pts.pop();
+  pushHistory();
   const sh={id:nextId(),type,pts,
     label:(type==='polygon'?'Area':'Length')+' '+(S.shapes.filter(s=>s.type===type).length+1),
     rowKey:null,color:type==='polygon'?'#2563eb':type==='polyline'?'#7c3aed':'#b45309',state:null,
@@ -1791,6 +2320,7 @@ function finalize(type){
   hint(`${type} created. Link to a CSA item via Properties.`);
 }
 function addPoint(wp){
+  pushHistory();
   const sh={id:nextId(),type:'point',pts:[{x:wp.x,y:wp.y}],
     label:'Point '+(S.shapes.filter(s=>s.type==='point').length+1),
     rowKey:null,color:'#b45309',state:null,
@@ -1811,8 +2341,10 @@ function pickShape(cx,cy){
 function selShape(id){S.sel=S.shapes.find(s=>s.id===id)||null;showProps(S.sel);renderCSA();draw();}
 function delShape(){
   if(!S.sel)return;
+  pushHistory();
   S.shapes=S.shapes.filter(s=>s.id!==S.sel.id);
   S.sel=null;showProps(null);refreshShapes();updateStats();renderCSA();renderFloorTabs();draw();
+  saveFloorState();saveProjects();
 }
 function ptInPoly(px,py,pts){
   let inside=false;
@@ -1910,8 +2442,10 @@ function stateColors(st,fb){
 }
 function setShapeState(st){
   if(!S.sel)return;
+  pushHistory();
   S.sel.state=S.sel.state===st?null:st;
   showProps(S.sel);refreshShapes();renderCSA();draw();
+  saveFloorState();saveProjects();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1989,25 +2523,35 @@ function draw(){
 
 function drawShape(sh,sel,dimmed){
   const st=resolveState(sh);const{stroke:sc,fill:fc}=stateColors(st,sh.color);
-  const lw=(sel?3:1.8)/S.zoom;ctx.save();
+  const isMulti = S.multiSel && S.multiSel.includes(sh.id);
+  const lw=(sel?3:isMulti?2.5:1.8)/S.zoom;ctx.save();
   // If shape belongs to a hidden layer, render ghost-style so user knows it's filtered
   if(dimmed){ ctx.globalAlpha=0.18; }
+  // Multi-select highlight ring
+  if(isMulti && !sel && !dimmed){
+    ctx.strokeStyle='rgba(124,58,237,.7)';
+    ctx.lineWidth=2/S.zoom;
+    ctx.setLineDash([4/S.zoom,3/S.zoom]);
+    if(sh.type==='polygon'&&sh.pts.length>=3){drawPoly(sh.pts);ctx.closePath();ctx.stroke();}
+    else if(sh.type==='polyline'&&sh.pts.length>=2){ctx.beginPath();ctx.moveTo(sh.pts[0].x,sh.pts[0].y);sh.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
+    ctx.setLineDash([]);
+  }
   const pctStr=sh.rowKey&&sh.workPct!=null?`${sh.workPct.toFixed(0)}%`:(sh.rowKey?'0%':null);
   if(sh.type==='polygon'&&sh.pts.length>=3){
     drawPoly(sh.pts);ctx.closePath();ctx.fillStyle=fc;ctx.fill();ctx.strokeStyle=sc;ctx.lineWidth=lw;ctx.stroke();
     const cx=sh.pts.reduce((a,p)=>a+p.x,0)/sh.pts.length,cy=sh.pts.reduce((a,p)=>a+p.y,0)/sh.pts.length;
-    drawLbl2(cx,cy,sh.label,measure(sh).val+' m²',sc,pctStr,sh.state);
+    if(S.showTags) drawLbl2(cx,cy,sh.label+(sh.labelCode?' ['+sh.labelCode+']':''),measure(sh).val+' m²',sc,pctStr,sh.state);
     sh.pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.5/S.zoom,0,Math.PI*2);ctx.fillStyle=sc;ctx.fill();});
   }else if(sh.type==='polyline'&&sh.pts.length>=2){
     drawLine(sh.pts);ctx.strokeStyle=sc;ctx.lineWidth=lw;ctx.stroke();
     sh.pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3/S.zoom,0,Math.PI*2);ctx.fillStyle=sc;ctx.fill();});
     const mid=sh.pts[Math.floor(sh.pts.length/2)];
-    if(S.showLabels) drawLbl2(mid.x,mid.y-20/S.zoom,sh.label+(sh.labelCode?' ['+sh.labelCode+']':''),measure(sh).val+' m',sc,pctStr,sh.state);
+    if(S.showTags) drawLbl2(mid.x,mid.y-20/S.zoom,sh.label+(sh.labelCode?' ['+sh.labelCode+']':''),measure(sh).val+' m',sc,pctStr,sh.state);
   }else if(sh.type==='point'){
     const p=sh.pts[0];
     ctx.beginPath();ctx.arc(p.x,p.y,(sel?10:7)/S.zoom,0,Math.PI*2);ctx.fillStyle=fc;ctx.fill();ctx.strokeStyle=sc;ctx.lineWidth=lw;ctx.stroke();
     ctx.beginPath();ctx.arc(p.x,p.y,2.5/S.zoom,0,Math.PI*2);ctx.fillStyle=sc;ctx.fill();
-    drawLbl2(p.x,p.y-18/S.zoom,sh.label,'count',sc,pctStr,sh.state);
+    if(S.showTags) drawLbl2(p.x,p.y-18/S.zoom,sh.label+(sh.labelCode?' ['+sh.labelCode+']':''),'count',sc,pctStr,sh.state);
   }
   ctx.restore();
 }
@@ -2118,11 +2662,13 @@ function refreshShapes(){
     const item=(getCurrentBldData()?.items||[]).find(i=>i.id===sh.rowKey);
     const shPct=sh.rowKey?(sh.workPct!=null?sh.workPct:0):null;
     const isHidden=!shapePassesFilter(sh);
-    return `<div class="si${sh===S.sel?' on':''}${isHidden?' si-hidden':''}" onclick="selShape(${sh.id})" title="${isHidden?'Layer hidden — click pill to reveal':''}">
+    const isMultiSel=S.multiSel&&S.multiSel.includes(sh.id);
+    return `<div class="si${sh===S.sel?' on':''}${isHidden?' si-hidden':''}${isMultiSel?' multi-on':''}" onclick="handleShapeListClick(event,${sh.id})" title="Shift+click = add to selection">
       <div class="sih">
         <div class="sdot" style="background:${sc}${isHidden?';opacity:.35':''}"></div>
-        <span class="sname" style="${isHidden?'opacity:.4;text-decoration:line-through;':''}">${sh.label}</span>
+        <span class="sname" style="${isHidden?'opacity:.4;text-decoration:line-through;':''}${isMultiSel?'color:var(--purple);font-weight:700;':''}">${sh.label}</span>
         ${isHidden?'<span style="font-size:7px;color:var(--text3);flex-shrink:0">hidden</span>':
+          isMultiSel?'<span style="font-size:7px;color:var(--purple);flex-shrink:0;font-weight:700">✓sel</span>':
           sh.state?`<span style="font-size:8px;font-weight:700;color:${sc};flex-shrink:0">${sh.state==='G'?'✓':sh.state==='Y'?'~':'✕'}</span>`:''}
         <div class="mini-st" onclick="event.stopPropagation()">
           <button class="mst sG${sh.state==='G'?' active':''}" onclick="S.sel=S.shapes.find(x=>x.id===${sh.id});setShapeState('G')">G</button>
@@ -2132,13 +2678,24 @@ function refreshShapes(){
         <button class="sdel" onclick="event.stopPropagation();S.sel=S.shapes.find(x=>x.id===${sh.id});delShape()">✕</button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;font-size:10px;${isHidden?'opacity:.4':''}">
-        <span style="color:var(--accent);font-weight:700">${m.val} ${m.unit}</span>
+        <span style="color:${isMultiSel?'var(--purple)':'var(--accent)'};font-weight:700">${m.val} ${m.unit}</span>
         ${item?`<span style="color:var(--text3);font-size:9px">[${item.id}]</span>`:`<span style="color:var(--text3);font-size:9px">unlinked</span>`}
         ${(function(){var c=getCatForShape(sh);return c?'<span class="sh-cat-tag" style="background:'+c.bg+';color:'+c.color+';border:1px solid '+c.color+'33">'+c.label+'</span>':'';})()} 
         ${shPct!=null?`<span style="color:${sc};font-size:9px;font-weight:700">${shPct.toFixed(0)}%</span>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+/** Sidebar shape list click: Shift = toggle multi-select, plain = single select */
+function handleShapeListClick(e, id) {
+  if (e.shiftKey) {
+    toggleMultiSel(id);
+    refreshShapes();
+  } else {
+    clearMultiSel();
+    selShape(id);
+  }
 }
 
 function updateStats(){
@@ -2149,6 +2706,7 @@ function updateStats(){
   document.getElementById('qsc').textContent=cnt;
   document.getElementById('qsp')&&(document.getElementById('qsp').textContent=poly);
   document.getElementById('qspl')&&(document.getElementById('qspl').textContent=line);
+  _updateSelStats(); // update selection stats panel
   refreshShapes();if(S.sel)showProps(S.sel);
 }
 
@@ -2610,7 +3168,193 @@ function checkUrlShare(){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// EXPORT / IMPORT FILE (.ryg) — บันทึก/นำเข้าไฟล์ local
+// สำรองข้อมูลแบบ offline ไม่พึ่งพา Google Sheets
 // ══════════════════════════════════════════════════════════════════
+
+/** Export โครงการปัจจุบันเป็นไฟล์ .ryg (รวม PDF floor plan) */
+function exportProjectFile(projectId) {
+  var id = projectId || APP.currentProjectId;
+  if (!id) { hint('กรุณาเปิดโครงการก่อน หรือเลือกจากเมนู ⋯ บน card'); return; }
+
+  // 1) บันทึก floor ปัจจุบันก่อน (ถ้าอยู่ใน editor)
+  saveFloorState();
+
+  var proj = APP.projects.find(function(p){ return p.id === id; });
+  if (!proj) { hint('ไม่พบโครงการ'); return; }
+
+  hint('💾 กำลังเตรียมไฟล์… (อาจใช้เวลาสักครู่หากมี PDF หลายชั้น)');
+
+  // 2) clone project data จาก APP.projects (มี shapes/manuals ครบ)
+  var clone;
+  try { clone = JSON.parse(JSON.stringify(proj)); }
+  catch(e) { hint('Export ล้มเหลว: ' + e.message); return; }
+
+  // 3) re-inject PDF data จาก 3 แหล่งตามลำดับ priority:
+  //    CANVAS_STORE (full quality) → PDF cache (compressed) → fld.pdfDataUrl เดิม
+  var pdfCache = loadPdfCache();
+
+  Object.keys(clone.buildings || {}).forEach(function(bk) {
+    Object.keys(clone.buildings[bk].floors || {}).forEach(function(fk) {
+      var fld = clone.buildings[bk].floors[fk];
+      var storeKey = bk + '::' + fk;           // CANVAS_STORE key format
+      var cacheKey = proj.id+'::'+bk+'::'+fk;  // PDF cache key format
+
+      if (CANVAS_STORE[storeKey]) {
+        // Primary: full-quality canvas (no re-compression from session)
+        try {
+          fld.pdfDataUrl = CANVAS_STORE[storeKey].toDataURL('image/jpeg', 0.88);
+          fld.origPdfW = CANVAS_STORE[storeKey].width;
+          fld.origPdfH = CANVAS_STORE[storeKey].height;
+          fld.hasBg = true;
+        } catch(e) { /* fall through */ }
+      }
+
+      if (!fld.pdfDataUrl && pdfCache[cacheKey]) {
+        // Secondary: compressed version saved in localStorage
+        fld.pdfDataUrl = pdfCache[cacheKey].pdfDataUrl;
+        fld.origPdfW   = pdfCache[cacheKey].origPdfW || fld.origPdfW;
+        fld.origPdfH   = pdfCache[cacheKey].origPdfH || fld.origPdfH;
+        fld.hasBg = true;
+      }
+
+      if (!fld.pdfDataUrl && proj.buildings[bk] && proj.buildings[bk].floors[fk] && proj.buildings[bk].floors[fk].pdfDataUrl) {
+        // Tertiary: still in APP.projects memory (before any strip)
+        fld.pdfDataUrl = proj.buildings[bk].floors[fk].pdfDataUrl;
+        fld.hasBg = true;
+      }
+    });
+  });
+
+  // 4) ห่อด้วย envelope และ download
+  var payload = { version:'ryg_v9', exported: new Date().toISOString(), project: clone };
+  var json;
+  try { json = JSON.stringify(payload, null, 2); }
+  catch(e) { hint('Export ล้มเหลว (JSON error): ' + e.message); return; }
+
+  var blob = new Blob([json], {type:'application/json;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url;
+  a.download = (proj.name||'project').replace(/[^\w\u0E00-\u0E7F\s-]+/g,'_').trim()
+    + '_' + new Date().toISOString().slice(0,10) + '.ryg';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  hint('💾 บันทึกไฟล์สำเร็จ: ' + a.download);
+}
+
+/** Export โครงการทั้งหมดเป็นไฟล์ .ryg เดียว */
+function exportAllProjectsFile() {
+  saveFloorState();
+  var pdfCache = loadPdfCache();
+
+  var clones = APP.projects.map(function(proj) {
+    var c;
+    try { c = JSON.parse(JSON.stringify(proj)); } catch(e) { return proj; }
+
+    Object.keys(c.buildings || {}).forEach(function(bk) {
+      Object.keys(c.buildings[bk].floors || {}).forEach(function(fk) {
+        var fld = c.buildings[bk].floors[fk];
+        var storeKey = bk + '::' + fk;
+        var cacheKey = proj.id+'::'+bk+'::'+fk;
+
+        if (CANVAS_STORE[storeKey]) {
+          try {
+            fld.pdfDataUrl = CANVAS_STORE[storeKey].toDataURL('image/jpeg', 0.85);
+            fld.origPdfW = CANVAS_STORE[storeKey].width;
+            fld.origPdfH = CANVAS_STORE[storeKey].height;
+            fld.hasBg = true;
+          } catch(e) {}
+        }
+        if (!fld.pdfDataUrl && pdfCache[cacheKey]) {
+          fld.pdfDataUrl = pdfCache[cacheKey].pdfDataUrl;
+          fld.origPdfW   = pdfCache[cacheKey].origPdfW || fld.origPdfW;
+          fld.origPdfH   = pdfCache[cacheKey].origPdfH || fld.origPdfH;
+          fld.hasBg = true;
+        }
+        if (!fld.pdfDataUrl && proj.buildings[bk] && proj.buildings[bk].floors[fk] && proj.buildings[bk].floors[fk].pdfDataUrl) {
+          fld.pdfDataUrl = proj.buildings[bk].floors[fk].pdfDataUrl;
+          fld.hasBg = true;
+        }
+      });
+    });
+    return c;
+  });
+
+  var payload = { version:'ryg_v9', exported: new Date().toISOString(), projects: clones };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url;
+  a.download = 'ryg_all_projects_' + new Date().toISOString().slice(0,10) + '.ryg';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  hint('💾 บันทึกทุกโครงการ: ' + a.download + ' (' + clones.length + ' โครงการ)');
+}
+
+/** Import โครงการจากไฟล์ .ryg */
+function importProjectFile(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var raw = JSON.parse(ev.target.result);
+      // Support both single and multi-project files
+      var projs = [];
+      if (raw.project)           projs = [raw.project];
+      else if (raw.projects)     projs = raw.projects;
+      else if (raw.id && raw.name) projs = [raw];
+      else throw new Error('ไม่ใช่ไฟล์ .ryg ที่ถูกต้อง — ไม่พบข้อมูลโครงการ');
+
+      var added = 0, updated = 0;
+      projs.forEach(function(proj) {
+        if (!proj.id || !proj.name) return;
+        // Ensure proper structure
+        Object.keys(proj.buildings||{}).forEach(function(bk) {
+          var b = proj.buildings[bk];
+          b.floors = b.floors||{}; b.items = b.items||[];
+          Object.keys(b.floors).forEach(function(fk) {
+            var f = b.floors[fk];
+            f.shapes=f.shapes||[]; f.manuals=f.manuals||{};
+            f.pxPerM=f.pxPerM||100; f.calibrated=!!f.calibrated;
+            f.pan=f.pan||{x:0,y:0}; f.zoom=f.zoom||1;
+          });
+        });
+        // Separate PDF data into cache
+        var pdfCache = loadPdfCache();
+        Object.entries(proj.buildings||{}).forEach(function([bk, bld]) {
+          Object.entries(bld.floors||{}).forEach(function([fk, fld]) {
+            if (fld.pdfDataUrl) {
+              pdfCache[proj.id+'::'+bk+'::'+fk] = {
+                pdfDataUrl: fld.pdfDataUrl,
+                origPdfW: fld.origPdfW||0, origPdfH: fld.origPdfH||0
+              };
+              fld.pdfDataUrl = null;
+            }
+          });
+        });
+        try { localStorage.setItem(PDF_CACHE_KEY, JSON.stringify(pdfCache)); } catch(e){}
+        var ex = APP.projects.findIndex(function(p){ return p.id === proj.id; });
+        if (ex >= 0) { APP.projects[ex] = proj; updated++; }
+        else { APP.projects.unshift(proj); added++; }
+      });
+      _saveLocalStorage();
+      _pushToGAS(); // sync to Sheets in background
+      renderHome();
+      closeModal('importOv');
+      var msg = [];
+      if (added)   msg.push(added + ' โครงการใหม่');
+      if (updated) msg.push(updated + ' โครงการอัปเดต');
+      hint('✅ นำเข้าสำเร็จ: ' + msg.join(', '));
+      if (projs.length === 1) {
+        if (confirm('นำเข้า "'+projs[0].name+'" สำเร็จ — เปิดโครงการเลยไหม?'))
+          openProject(projs[0].id);
+      }
+    } catch(err) {
+      alert('❌ นำเข้าไม่สำเร็จ: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
 // EXPORT — PNG / PDF / PDF with Report
 // ══════════════════════════════════════════════════════════════════
 
@@ -2895,6 +3639,232 @@ function toggleLabels(){
       :'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Labels OFF');
   }
   draw();
+}
+
+function toggleTags(){
+  S.showTags=!S.showTags;
+  var btn=document.getElementById('tagToggleBtn');
+  if(btn){
+    btn.className=S.showTags?'vc-btn lbl-on':'vc-btn';
+    btn.innerHTML=(S.showTags
+      ?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Tags ON'
+      :'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Tags OFF');
+  }
+  draw();
+  hint(S.showTags?'Tags visible':'Tags hidden — shapes still selectable');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LABEL CODE GROUP REPORT
+// Groups shapes by labelCode → then by label within same code
+// ══════════════════════════════════════════════════════════════════
+
+/** Build group data: { [labelCode]: { [label]: [shapes] } } */
+function buildLabelGroups(shapesArr) {
+  var groups = {}; // labelCode → { label → [shapes] }
+  shapesArr.forEach(function(sh) {
+    var lc = (sh.labelCode || '').trim() || '(no code)';
+    var lb = (sh.label || '').trim() || 'Unnamed';
+    if (!groups[lc]) groups[lc] = {};
+    if (!groups[lc][lb]) groups[lc][lb] = [];
+    groups[lc][lb].push(sh);
+  });
+  return groups;
+}
+
+/** Summarise a flat array of shapes → {area, len, cnt, avgPct, shapes} */
+function summariseShapes(shapesArr) {
+  var area=0, len=0, cnt=0, pctSum=0, pctN=0;
+  shapesArr.forEach(function(sh){
+    var m = measure(sh);
+    if(sh.type==='polygon')      area += m.raw;
+    else if(sh.type==='polyline') len  += m.raw;
+    else                          cnt++;
+    if(sh.workPct != null){ pctSum += sh.workPct; pctN++; }
+  });
+  return { area:area, len:len, cnt:cnt,
+           avgPct: pctN > 0 ? pctSum/pctN : 0,
+           total: shapesArr.length };
+}
+
+/** Show the Label Code Group Report modal */
+function showLabelCodeReport() {
+  // Collect all shapes from current floor (or all visible)
+  var allShapes = S.shapes;
+  var groups = buildLabelGroups(allShapes);
+  var sortedCodes = Object.keys(groups).sort();
+
+  var html = '';
+  sortedCodes.forEach(function(lc) {
+    var lcShapes = []; // all shapes in this code group
+    Object.values(groups[lc]).forEach(function(arr){ lcShapes = lcShapes.concat(arr); });
+    var lcSum = summariseShapes(lcShapes);
+    var lcColor = lcShapes[0] ? (function(){var st=resolveState(lcShapes[0]);return st==='G'?'var(--green)':st==='Y'?'var(--yellow)':st==='R'?'var(--red)':'var(--accent)';}()) : 'var(--accent)';
+
+    html += '<div class="lcg-group">';
+    html += '<div class="lcg-header" onclick="this.nextElementSibling.classList.toggle(\'lcg-collapsed\')">';
+    html += '<span class="lcg-code" style="color:'+lcColor+'">['+lc+']</span>';
+    html += '<span class="lcg-meta">';
+    if(lcSum.area>0) html += '<span>⬛ '+lcSum.area.toFixed(2)+' m²</span>';
+    if(lcSum.len>0)  html += '<span>⟶ '+lcSum.len.toFixed(2)+' m</span>';
+    if(lcSum.cnt>0)  html += '<span>● '+lcSum.cnt+'</span>';
+    html += '</span>';
+    html += '<span class="lcg-pct" style="color:'+lcColor+'">'+lcSum.avgPct.toFixed(1)+'%</span>';
+    html += '<span class="lcg-bar"><span class="lcg-bar-fill" style="width:'+Math.min(100,lcSum.avgPct)+'%;background:'+lcColor+'"></span></span>';
+    html += '<span style="font-size:8px;color:var(--text3);margin-left:4px">'+lcShapes.length+' shape'+(lcShapes.length!==1?'s':'')+'</span>';
+    html += '</div>'; // header
+    html += '<div class="lcg-body">';
+
+    // Sub-groups by label
+    var sortedLabels = Object.keys(groups[lc]).sort();
+    sortedLabels.forEach(function(lb) {
+      var lbShapes = groups[lc][lb];
+      var lbSum = summariseShapes(lbShapes);
+      html += '<div class="lcg-row">';
+      html += '<span class="lcg-lbl">'+lb+'</span>';
+      html += '<span class="lcg-meas">';
+      if(lbSum.area>0) html += lbSum.area.toFixed(2)+' m²';
+      if(lbSum.len>0)  html += (lbSum.area>0?' · ':'')+lbSum.len.toFixed(2)+' m';
+      if(lbSum.cnt>0)  html += (lbSum.area+lbSum.len>0?' · ':'')+lbSum.cnt+' pt';
+      html += '</span>';
+      html += '<span class="lcg-row-pct">'+lbSum.avgPct.toFixed(1)+'%</span>';
+      html += '<span class="lcg-bar sm"><span class="lcg-bar-fill" style="width:'+Math.min(100,lbSum.avgPct)+'%;background:var(--accent)"></span></span>';
+      html += '</div>';
+    });
+    html += '</div>'; // body
+    html += '</div>'; // group
+  });
+
+  if(!sortedCodes.length) html = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px">No shapes on this floor yet.<br>Draw shapes and set Label Codes in Properties.</div>';
+
+  document.getElementById('lcgBody').innerHTML = html;
+  document.getElementById('lcgFloorLabel').textContent =
+    (APP.currentBuilding||'') + ' / ' + (APP.currentFloor||'') +
+    ' — ' + allShapes.length + ' shapes';
+  document.getElementById('lcgOv').classList.add('open');
+}
+
+/** Export Label Code group data to CSV */
+function exportLabelCSV() {
+  var allShapes = S.shapes;
+  var groups = buildLabelGroups(allShapes);
+  var proj = APP.cp;
+  var rows = [
+    ['Project','Building','Floor','Label Code','Label','Area m²','Length m','Count pts','Avg Work %','Shape count']
+  ];
+  Object.keys(groups).sort().forEach(function(lc) {
+    Object.keys(groups[lc]).sort().forEach(function(lb) {
+      var s = summariseShapes(groups[lc][lb]);
+      rows.push([
+        proj?proj.name:'', APP.currentBuilding||'', APP.currentFloor||'',
+        lc, lb,
+        s.area.toFixed(3), s.len.toFixed(3), s.cnt,
+        s.avgPct.toFixed(2), s.total
+      ]);
+    });
+  });
+  var csv = rows.map(function(r){ return r.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url;
+  a.download = 'ryg_labelcode_'+(APP.currentBuilding||'bld').replace(/\s/g,'_')+'_'+(APP.currentFloor||'flr')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  hint('CSV exported: '+a.download);
+}
+
+/** Export Label Code group data to PDF table */
+function exportLabelPDF() {
+  loadJsPDF().then(function(){
+    var {jsPDF} = window.jspdf;
+    var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var PW=210,PH=297,MG=12;
+    var proj = APP.cp;
+
+    // Header strip
+    doc.setFillColor(15,23,42);
+    doc.rect(0,0,PW,22,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.text('Label Code Report',MG,14);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(148,163,184);
+    var sub = (proj?proj.name:'') + '  ·  ' + (APP.currentBuilding||'') + ' / ' + (APP.currentFloor||'') + '  ·  ' + new Date().toLocaleDateString('th-TH');
+    doc.text(sub, MG, 19);
+    doc.text('Scale: '+(S.calibrated?S.pxPerM.toFixed(2)+' px/m':'Uncalibrated'), PW-MG, 14, {align:'right'});
+    doc.setTextColor(255,255,255); doc.text(new Date().toLocaleTimeString(),PW-MG,19,{align:'right'});
+
+    var Y = 30;
+    var allShapes = S.shapes;
+    var groups = buildLabelGroups(allShapes);
+    var sortedCodes = Object.keys(groups).sort();
+
+    sortedCodes.forEach(function(lc, ci) {
+      var lcShapes = [];
+      Object.values(groups[lc]).forEach(function(arr){ lcShapes = lcShapes.concat(arr); });
+      var lcSum = summariseShapes(lcShapes);
+
+      // Group header
+      if(Y > PH-40){ doc.addPage(); Y=18; }
+      doc.setFillColor(30,41,59);
+      doc.rect(MG,Y,PW-MG*2,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+      doc.text('['+lc+']  —  '+lcShapes.length+' shapes', MG+2, Y+5.5);
+      var lcMeta = '';
+      if(lcSum.area>0) lcMeta += lcSum.area.toFixed(2)+' m²  ';
+      if(lcSum.len>0)  lcMeta += lcSum.len.toFixed(2)+' m  ';
+      if(lcSum.cnt>0)  lcMeta += lcSum.cnt+' pt  ';
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text(lcMeta, PW-MG-30, Y+5.5, {align:'right'});
+      // Avg % badge
+      var pct = lcSum.avgPct;
+      var bw = 22;
+      doc.setFillColor(pct>=100?22:pct>0?217:220, pct>=100?163:pct>0?119:38, pct>=100?74:pct>0?6:38);
+      doc.rect(PW-MG-bw, Y+1, bw, 6, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+      doc.text(pct.toFixed(1)+'%', PW-MG-bw/2, Y+5.5, {align:'center'});
+      // Progress bar
+      Y += 9;
+      doc.setFillColor(226,232,240);
+      doc.rect(MG, Y, PW-MG*2, 2.5, 'F');
+      doc.setFillColor(pct>=100?22:pct>0?217:220, pct>=100?163:pct>0?119:38, pct>=100?74:pct>0?6:38);
+      doc.rect(MG, Y, (PW-MG*2)*Math.min(1,pct/100), 2.5, 'F');
+      Y += 4;
+
+      // Sub-rows (by label)
+      var sortedLabels = Object.keys(groups[lc]).sort();
+      sortedLabels.forEach(function(lb, ri) {
+        if(Y > PH-20){ doc.addPage(); Y=18; }
+        var lbShapes = groups[lc][lb];
+        var s = summariseShapes(lbShapes);
+        var rowBg = ri%2===0;
+        if(rowBg){ doc.setFillColor(248,250,252); doc.rect(MG,Y,PW-MG*2,7,'F'); }
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,41,59);
+        doc.text(lb.length>38?lb.slice(0,38)+'…':lb, MG+3, Y+4.8);
+        // Measurements
+        var mStr = '';
+        if(s.area>0) mStr += s.area.toFixed(2)+' m²  ';
+        if(s.len>0)  mStr += s.len.toFixed(2)+' m  ';
+        if(s.cnt>0)  mStr += s.cnt+' pt  ';
+        doc.setTextColor(71,85,105);
+        doc.text(mStr, MG+90, Y+4.8);
+        // Work %
+        var rowPct = s.avgPct;
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(rowPct>=100?22:rowPct>0?180:220, rowPct>=100?163:rowPct>0?83:38, rowPct>=100?74:rowPct>0?9:38);
+        doc.text(rowPct.toFixed(1)+'%', PW-MG-3, Y+4.8, {align:'right'});
+        doc.setFont('helvetica','normal'); doc.setTextColor(148,163,184);
+        doc.text(lbShapes.length+' shape'+(lbShapes.length!==1?'s':''), PW-MG-22, Y+4.8, {align:'right'});
+        Y += 7;
+      });
+      Y += 3;
+    });
+
+    // Footer
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(148,163,184);
+    doc.text('RYG FloorPlan  ·  Label Code Report  ·  '+new Date().toISOString().slice(0,10), MG, PH-MG+6);
+    var fname='ryg_labelcode_'+(APP.currentBuilding||'bld').replace(/\s/g,'_')+'_'+(APP.currentFloor||'flr')+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+    doc.save(fname);
+    hint('Label Code PDF saved: '+fname);
+  }).catch(function(e){ hint('PDF failed: '+e.message); });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -3374,190 +4344,20 @@ function drawLblOnCtxWithOpts(c,x,y,title,val,color,fSz,opts){
 
 
 // ══════════════════════════════════════════════════════════════════
+// SHARE — JSONBin cloud sync removed; only share code/link remains
 // ══════════════════════════════════════════════════════════════════
-// CLOUD SYNC  — JSONBin.io (CORS-enabled, free tier, no server needed)
-// Flow: user sets their JSONBin Master Key → app creates/updates a "bin"
-//       per project → teammates paste the Bin ID to pull changes.
-// Free tier: jsonbin.io (500 bins, no rate limit for small projects).
-// ══════════════════════════════════════════════════════════════════
-var JBIN = 'https://api.jsonbin.io/v3';
-var _autoSyncTimer = null;
-var _syncId = '';   // bin ID on JSONBin
-var _apiKey = '';   // user's JSONBin Master Key
-
-function showSyncModal(){
-  document.getElementById('syncOv').classList.add('open');
-  // Restore saved values
-  var savedKey = localStorage.getItem('rygfp_jbin_key') || '';
-  var savedId  = localStorage.getItem('rygfp_sync_id_'+(APP.currentProjectId||'')) || '';
-  _apiKey = savedKey;
-  _syncId  = savedId;
-  var keyEl = document.getElementById('jbinKeyInput');
-  if(keyEl) keyEl.value = savedKey;
-  if(savedId){ document.getElementById('syncIdInput').value = savedId; }
-  document.getElementById('syncShareUrl').value = '';
-  document.getElementById('syncShareMsg').textContent = '';
-  document.getElementById('syncCopyLinkBtn').disabled = true;
-  if(savedKey && savedId) setSyncStatus('ok','Ready — API key and Bin ID loaded');
-  else if(savedKey)       setSyncStatus('idle','API key set. Click "Create Bin" to get a Bin ID.');
-  else                    setSyncStatus('idle','Enter your JSONBin API key to enable cloud sync.');
-}
-
-function setSyncStatus(state,msg){
-  var dot=document.getElementById('syncDot');
-  var msgEl=document.getElementById('syncMsg');
-  if(!dot||!msgEl) return;
-  dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':state==='busy'?' busy':'');
-  msgEl.textContent=msg;
-  msgEl.style.color=state==='ok'?'var(--green)':state==='err'?'var(--red)':state==='busy'?'#f59e0b':'var(--text3)';
-}
-
-function saveApiKey(){
-  var el=document.getElementById('jbinKeyInput');
-  if(!el) return;
-  _apiKey=el.value.trim();
-  localStorage.setItem('rygfp_jbin_key', _apiKey);
-  setSyncStatus(_apiKey?'ok':'idle', _apiKey?'API key saved':'API key cleared');
-}
-
-function generateSyncId(){
-  // Creates a new bin on JSONBin and stores the bin ID as our sync ID
-  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
-  setSyncStatus('busy','Creating bin on JSONBin…');
-  saveFloorState();
-  var payload=buildSharePayload();
-  if(!payload){ setSyncStatus('err','No project to push'); return; }
-  var body=JSON.stringify({rygProject:encodePayload(payload), ts:Date.now()});
-  fetch(JBIN+'/b',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-Master-Key':_apiKey,'X-Bin-Private':'false','X-Bin-Name':(APP.cp?APP.cp.name:'RYG')},
-    body:body
-  }).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status+' — check API key');
-    return r.json();
-  }).then(function(json){
-    var binId=json.metadata&&json.metadata.id?json.metadata.id:'';
-    if(!binId) throw new Error('No bin ID returned');
-    _syncId=binId;
-    document.getElementById('syncIdInput').value=binId;
-    localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''), binId);
-    setSyncStatus('ok','Bin created! Share the Bin ID with your team: '+binId);
-  }).catch(function(e){
-    setSyncStatus('err','Create failed: '+e.message);
-  });
-}
-
-function getSyncId(){
-  var inp=document.getElementById('syncIdInput');
-  var id=inp?inp.value.trim():_syncId;
-  if(id){ _syncId=id; localStorage.setItem('rygfp_sync_id_'+(APP.currentProjectId||''),id); }
-  return id;
-}
-
-/** Push — update existing bin with latest project state */
-function syncPush(){
-  var id=getSyncId();
-  if(!id){ setSyncStatus('err','No Bin ID — click "Create Bin" first'); return; }
-  if(!_apiKey){ setSyncStatus('err','Enter your JSONBin Master Key first'); return; }
-  setSyncStatus('busy','Pushing to JSONBin…');
-  saveFloorState();
-  var payload=buildSharePayload();
-  if(!payload){ setSyncStatus('err','No project data'); return; }
-  var encoded=encodePayload(payload);
-  fetch(JBIN+'/b/'+id,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json','X-Master-Key':_apiKey},
-    body:JSON.stringify({rygProject:encoded, ts:Date.now(), pusher:navigator.userAgent.slice(0,40)})
-  }).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return r.json();
-  }).then(function(){
-    setSyncStatus('ok','Pushed at '+new Date().toLocaleTimeString()+' — teammates can now Pull');
-    // Also update share URL
-    var url=window.location.href.split('#')[0]+'#share='+encoded;
-    document.getElementById('syncShareUrl').value=url.length<8000?url:'(too large for URL — use Copy Code)';
-    document.getElementById('syncCopyLinkBtn').disabled=url.length>=8000;
-  }).catch(function(e){
-    setSyncStatus('err','Push failed: '+e.message);
-  });
-}
-
-/** Pull — fetch latest data from the bin (no API key needed for public bins) */
-function syncPull(){
-  var id=getSyncId();
-  if(!id){ setSyncStatus('err','Enter the Bin ID you received from a teammate'); return; }
-  setSyncStatus('busy','Pulling from JSONBin…');
-  // Public read — no Master Key required
-  var headers={'X-Bin-Meta':'false'};
-  if(_apiKey) headers['X-Master-Key']=_apiKey;
-  fetch(JBIN+'/b/'+id+'/latest',{headers:headers})
-  .then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status+' — check Bin ID');
-    return r.json();
-  }).then(function(json){
-    var code=json.rygProject||json.record&&json.record.rygProject;
-    if(!code) throw new Error('No RYG project data in this bin');
-    importFromCode(code);
-    setSyncStatus('ok','Pulled at '+new Date().toLocaleTimeString());
-  }).catch(function(e){
-    setSyncStatus('err','Pull failed: '+e.message);
-  });
-}
-
-function importFromCode(code){
-  try{
-    var payload=JSON.parse(decodeURIComponent(escape(atob(code))));
-    if(!payload.v||!payload.project) throw new Error('Invalid format');
-    var proj=payload.project;
-    var existing=APP.projects.find(function(p){return p.id===proj.id;});
-    if(existing){
-      Object.assign(existing,proj);
-      existing.modified=Date.now();
-    } else {
-      proj.modified=Date.now();
-      APP.projects.unshift(proj);
-    }
-    saveProjects();
-    renderHome();
-    if(APP.view==='editor'&&APP.currentProjectId===proj.id){
-      loadFloorState().then(function(){
-        renderBldTabs();renderFloorTabs();renderCSA();refreshShapes();updateStats();draw();
-      });
-    }
-    setSyncStatus('ok','Project synced successfully');
-  }catch(e){setSyncStatus('err','Import failed: '+e.message);}
-}
-
-function toggleAutoSync(on){
-  clearInterval(_autoSyncTimer);
-  document.getElementById('autoSyncLabel').textContent=on?'ON - every 60s':'OFF';
-  if(on){
-    if(!_apiKey||!_syncId){ setSyncStatus('err','Set API key and Bin ID before enabling auto-sync'); document.getElementById('autoSyncChk').checked=false; return; }
-    _autoSyncTimer=setInterval(function(){ syncPush(); },60000);
-  }
-}
-
-function generateSyncShareLink(){
-  var payload=buildSharePayload();
-  if(!payload){ document.getElementById('syncShareMsg').textContent='No project to share'; return; }
-  var code=encodePayload(payload);
-  var url=window.location.href.split('#')[0]+'#share='+code;
-  var ok=url.length<8000;
-  document.getElementById('syncShareUrl').value=ok?url:'(Code too large for URL — use Copy Code)';
-  document.getElementById('syncCopyLinkBtn').disabled=!ok;
-  var msg=ok?'Link ready — send to teammate':'Project too large for URL. Use the Copy Code button.';
-  document.getElementById('syncShareMsg').textContent=msg;
-  document.getElementById('syncShareMsg').style.color=ok?'var(--green)':'var(--yellow)';
-}
-
+function setSyncStatus(){}
+function saveApiKey(){}
+function generateSyncId(){}
+function syncPush(){ hint('Cloud sync removed. Use Share → Generate.'); }
+function syncPull(){ hint('Cloud sync removed. Use Import to load a project code.'); }
+function toggleAutoSync(){}
+function generateSyncShareLink(){ generateShare(); }
 function syncCopyLink(){
-  var url=document.getElementById('syncShareUrl').value;
-  if(!url||url.startsWith('(')) return;
-  navigator.clipboard.writeText(url).then(function(){
-    document.getElementById('syncShareMsg').textContent='Link copied!';
-    document.getElementById('syncShareMsg').style.color='var(--green)';
-  }).catch(function(){ document.getElementById('syncShareUrl').select(); });
+  var url=document.getElementById('shareUrlBox')?.value;
+  if(url) navigator.clipboard.writeText(url).catch(()=>{});
 }
+
 
 // ══════════════════════════════════════════════════════════════════
 // SETTINGS
@@ -3817,10 +4617,10 @@ window.addEventListener('resize',()=>{if(APP.view==='editor')resize();});
 window.addEventListener('beforeunload',()=>{if(APP.view==='editor')saveProjects();});
 setInterval(()=>{if(APP.view==='editor')saveProjects();},45000);
 
-window.addEventListener('load',()=>{
-  loadProjects();
+window.addEventListener('load', async () => {
+  await loadProjects();
   checkUrlShare();
-  renderHome();
+  // renderHome() already called inside loadProjects()
 });
 </script>
 <!-- EXPORT PREVIEW MODAL -->
@@ -3911,106 +4711,134 @@ window.addEventListener('load',()=>{
   </div>
 </div>
 
-<!-- CLOUD SYNC MODAL -->
+<!-- SHARE MODAL (replaces old Cloud Sync — JSONBin removed) -->
 <div class="ov" id="syncOv">
-  <div class="modal" style="width:560px;max-height:90vh">
+  <div class="modal" style="width:520px;max-height:90vh">
     <div class="mh">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-      <span class="mt">Cloud Sync &amp; Team Collaboration</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span class="mt">Share &amp; Cloud Sync</span>
       <button class="mx" onclick="closeModal('syncOv')">&#x2715;</button>
     </div>
     <div class="mb" style="padding:16px 18px;overflow-y:auto">
 
-      <!-- STEP 1: API Key -->
+      <!-- GAS Cloud Sync Status -->
       <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:12px;margin-bottom:14px">
-        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">
-          Step 1 — Get a free JSONBin API Key
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span class="gas-dot" id="gasStatusDot2"></span>
+          Google Sheets Cloud Sync
         </div>
-        <p style="font-size:9px;color:var(--text2);line-height:1.7;margin-bottom:8px">
-          1. Go to <strong><a href="https://jsonbin.io" target="_blank" style="color:var(--accent)">jsonbin.io</a></strong> → Sign up free<br>
-          2. In your dashboard → <strong>API Keys</strong> → copy your <strong>Master Key</strong><br>
-          3. Paste it below — it is saved locally in your browser only
-        </p>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input id="jbinKeyInput" type="password" placeholder="Paste your JSONBin Master Key here ($2a$10$…)"
-            style="flex:1;padding:7px 10px;border:1px solid var(--abd);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;background:#fff;color:var(--text1)">
-          <button class="pbtn b" onclick="saveApiKey()" style="flex-shrink:0;white-space:nowrap;font-size:9px">Save Key</button>
+        <div style="font-size:9px;color:var(--text2);line-height:1.6;margin-bottom:8px">
+          ข้อมูลจะซิงค์กับ Google Sheets อัตโนมัติทุกครั้งที่บันทึก<br>
+          <span style="color:var(--text3)">PDF Floor Plan เก็บในเครื่องเท่านั้น (ขนาดใหญ่เกินไปสำหรับ Sheets)</span>
         </div>
-        <div style="font-size:8px;color:var(--text3);margin-top:4px">🔒 Key is stored only in your browser localStorage — never sent anywhere except JSONBin.io</div>
+        <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--text3);background:var(--bg3);padding:5px 8px;border-radius:4px;word-break:break-all;margin-bottom:8px" id="gasUrlDisplay"></div>
+        <div style="display:flex;gap:6px">
+          <button class="pbtn b" onclick="manualGasSync();updateGasModalStatus()" style="flex:1;font-size:9px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Pull ข้อมูลล่าสุดจาก Sheets
+          </button>
+          <button class="pbtn g" onclick="saveProjects();updateGasModalStatus()" style="flex:1;font-size:9px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+            Push ข้อมูลขึ้น Sheets
+          </button>
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:6px" id="gasModalStatus">สถานะ: ตรวจสอบ…</div>
       </div>
 
-      <!-- STEP 2: Bin ID -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
-        Step 2 — Create or Paste a Bin ID
+      <!-- Share Link -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">🔗 Share Link</div>
+      <p class="share-note">Embeds the full project into a URL. Anyone can open to import. Best for projects without large PDFs.</p>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input class="share-url-box" id="shareUrlBox" readonly placeholder="Click Generate to create link…">
+        <button class="pbtn b" id="copyLinkBtn" onclick="copyShareLink()" disabled style="flex-shrink:0;white-space:nowrap">Copy</button>
       </div>
-      <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        The <strong>Bin ID</strong> is your team's shared channel. Create one (you need the API key), then share the Bin ID with teammates. They paste it here to Pull your latest changes — they do <em>not</em> need the API key to Pull.
-      </p>
-      <div style="display:flex;gap:6px;margin-bottom:4px">
-        <input class="sync-id-box" id="syncIdInput" placeholder="Bin ID will appear here after creating, or paste a teammate's Bin ID…">
-        <button class="pbtn b" onclick="generateSyncId()" style="flex-shrink:0;white-space:nowrap;font-size:9px">Create Bin</button>
-      </div>
-      <div class="sync-status" id="syncStatus">
-        <span class="sync-dot" id="syncDot"></span>
-        <span id="syncMsg" style="font-size:9px;color:var(--text3)">Enter API key to get started</span>
+      <button class="pbtn b" onclick="generateShare()" style="width:100%;margin-top:6px;font-size:9px">⚡ Generate Link &amp; Code</button>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- Project Code -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">📋 Project Code</div>
+      <p class="share-note">Floor plan images (compressed) are embedded. Paste this code on another device to import the full project.</p>
+      <textarea class="share-code" id="shareOut" readonly placeholder="Click Generate above to create code…" style="margin-top:6px"></textarea>
+      <button class="pbtn g" id="copyShareBtn" onclick="copyShareCode()" disabled style="width:100%;margin-top:6px">Copy Code</button>
+      <div id="shareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- Export options -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">📤 Export Canvas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <button class="pbtn b" onclick="exportPNG();closeModal('syncOv')" style="font-size:9px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG
+        </button>
+        <button class="pbtn" onclick="exportPDF();closeModal('syncOv')" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF Plan
+        </button>
+        <button class="pbtn" onclick="exportFloorReport();closeModal('syncOv')" style="font-size:9px;background:var(--gbg);color:var(--green);border:1px solid var(--gbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> PDF + Report
+        </button>
       </div>
 
       <div style="border-top:1px solid var(--border);margin:14px 0"></div>
 
-      <!-- STEP 3: Push / Pull -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">
-        Step 3 — Push or Pull
+      <!-- File Backup -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">💾 ไฟล์สำรอง (.ryg) — ทำงานออฟไลน์ได้</div>
+      <p class="share-note" style="margin-bottom:8px">ไฟล์ .ryg เก็บข้อมูลทุกอย่างรวม PDF Floor Plan — นำเข้ากลับได้ทุกเมื่อโดยไม่ต้องมีอินเทอร์เน็ต</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="pbtn b" onclick="exportProjectFile();closeModal('syncOv')" style="font-size:9px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
+          Export โครงการนี้ (.ryg)
+        </button>
+        <button class="pbtn" onclick="exportAllProjectsFile();closeModal('syncOv')" style="font-size:9px;background:var(--pbg);color:var(--purple);border:1px solid var(--pbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
+          Export ทุกโครงการ (.ryg)
+        </button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-        <div style="border:1px solid var(--gbd);border-radius:7px;padding:12px;background:var(--gbg)">
-          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">
-            ⬆ Push (Upload)
-          </div>
-          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Save current project to cloud. Requires API key + Bin ID.</p>
-          <button class="pbtn g" onclick="syncPush()" style="width:100%;font-size:9px">Push to Cloud</button>
-        </div>
-        <div style="border:1px solid var(--abd);border-radius:7px;padding:12px;background:var(--abc)">
-          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px">
-            ⬇ Pull (Download)
-          </div>
-          <p style="font-size:8px;color:var(--text2);line-height:1.5;margin-bottom:8px">Load latest from cloud. Only needs Bin ID — no API key required.</p>
-          <button class="pbtn b" onclick="syncPull()" style="width:100%;font-size:9px">Pull from Cloud</button>
-        </div>
-      </div>
-
-      <!-- Auto-sync -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);margin-bottom:14px">
-        <input type="checkbox" id="autoSyncChk" style="accent-color:var(--accent)" onchange="toggleAutoSync(this.checked)">
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--text1)">Auto-sync every 60 seconds</div>
-          <div style="font-size:8px;color:var(--text3)">Automatically Push so teammates always have your latest version</div>
-        </div>
-        <span id="autoSyncLabel" style="margin-left:auto;font-size:8px;color:var(--text3);white-space:nowrap">OFF</span>
-      </div>
-
-      <!-- Share Link -->
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
-          Share Link (no cloud account needed)
-        </div>
-        <p style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.6">
-          Embed the full project into a URL. Anyone can open the link to import. Best for small projects. Large projects: use <strong>Copy Code</strong> instead.
-        </p>
-        <div style="display:flex;gap:6px">
-          <input class="share-url-box" id="syncShareUrl" readonly placeholder="Click Generate to build link…" style="font-size:9px">
-          <button class="pbtn b" id="syncCopyLinkBtn" onclick="syncCopyLink()" disabled style="flex-shrink:0;white-space:nowrap;font-size:9px">Copy</button>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:6px">
-          <button class="pbtn b" onclick="generateSyncShareLink()" style="flex:1;font-size:9px">⚡ Generate Link</button>
-          <button class="pbtn" onclick="generateShare()" style="flex:1;font-size:9px;background:var(--pbg);border:1px solid var(--pbd);color:var(--purple)">📋 Copy Code Only</button>
-        </div>
-        <div id="syncShareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
-      </div>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:6px;padding:8px 10px;border:1px dashed var(--border2);border-radius:6px;background:var(--bg2);cursor:pointer;font-size:9px;color:var(--text2);transition:.12s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        📂 Import จากไฟล์ .ryg (คลิกเพื่อเลือกไฟล์)
+        <input type="file" accept=".ryg,.json" style="display:none" onchange="importProjectFile(this);closeModal('syncOv')">
+      </label>
     </div>
     <div class="mf">
       <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('syncOv')">Close</button>
     </div>
   </div>
+</div>
+<!-- LABEL CODE GROUP REPORT MODAL -->
+<div class="ov" id="lcgOv">
+  <div class="modal" style="width:600px;max-height:90vh;display:flex;flex-direction:column">
+    <div class="mh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <span class="mt">Label Code Group Report</span>
+      <span id="lcgFloorLabel" style="font-size:9px;color:var(--text3);margin-left:6px;font-weight:400"></span>
+      <button class="mx" onclick="closeModal('lcgOv')">&#x2715;</button>
+    </div>
+    <!-- Legend / info bar -->
+    <div style="padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:8.5px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0">
+      <span>⬛ = Area (m²)</span><span>⟶ = Length (m)</span><span>● = Count</span>
+      <span>% = average Work % of shapes in group</span>
+      <span style="color:var(--purple);font-weight:700">Click group header to collapse/expand</span>
+    </div>
+    <div class="mb" id="lcgBody" style="flex:1;overflow-y:auto;padding:10px 12px"></div>
+    <div class="mf" style="gap:6px">
+      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('lcgOv')">Close</button>
+      <button class="pbtn b" onclick="exportLabelCSV()" style="font-size:9px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="pbtn" onclick="exportLabelPDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS SPINNER OVERLAY -->
+<div id="gasSpinner">
+  <div class="gas-spin-ring"></div>
+  <div class="gas-spin-msg">กำลังโหลดข้อมูล…</div>
 </div>
 
 </body>
