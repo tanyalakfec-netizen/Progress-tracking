@@ -1003,6 +1003,296 @@ td.hi{color:var(--accent);font-weight:700}
   </div>
 </div>
 
+<!-- CONFIRM MODAL -->
+<div class="ov" id="confirmOv" style="z-index:9999">
+  <div class="modal" style="width:360px;padding:0">
+    <div style="padding:20px 22px 8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:8px" id="confirmTitle">Confirm</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5" id="confirmMsg"></div>
+    </div>
+    <div style="display:flex;gap:8px;padding:14px 22px 18px;justify-content:flex-end">
+      <button id="confirmCancelBtn" style="font-size:10px;padding:5px 16px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer">Cancel</button>
+      <button id="confirmOkBtn" style="font-size:10px;padding:5px 16px;border-radius:5px;border:none;background:var(--red);color:#fff;cursor:pointer;font-weight:700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- MILESTONE DASHBOARD MODAL -->
+<div class="ov" id="msDashOv">
+  <div class="modal" style="width:96vw;max-width:1100px;max-height:92vh;display:flex;flex-direction:column">
+    <div class="mh" style="flex-shrink:0">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span class="mt">Milestone Progress Dashboard · Remaining Work Tracking</span>
+      <span style="margin-left:8px;font-size:10px;color:var(--text3)" id="msDashSubtitle"></span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="pbtn" onclick="exportMilestonePDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export PDF
+        </button>
+        <button class="mx" onclick="closeModal('msDashOv')">✕</button>
+      </div>
+    </div>
+    <!-- Milestone date input bar -->
+    <div style="padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="font-size:10px;font-weight:700;color:var(--text2)">Milestones:</span>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
+        <span style="color:var(--green);font-weight:700">RFS1</span>
+        <input type="date" id="msRFS1" value="2026-07-31" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
+        <span style="color:var(--yellow);font-weight:700">RFS2</span>
+        <input type="date" id="msRFS2" value="2026-08-31" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
+        <span style="color:var(--purple);font-weight:700">RFS3</span>
+        <input type="date" id="msRFS3" value="2026-09-30" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
+        <span style="color:var(--text2);font-weight:700">Data Date</span>
+        <input type="date" id="msDataDate" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
+      </div>
+      <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:4px">
+        <input type="checkbox" id="msShowRemaining" checked onchange="renderMsDash()" style="accent-color:var(--purple)"> Show Remaining %
+      </label>
+      <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:4px">
+        <input type="checkbox" id="msGroupByBldg" onchange="renderMsDash()" style="accent-color:var(--accent)"> Group by Building
+      </label>
+    </div>
+    <!-- Summary KPI strip -->
+    <div id="msKpiStrip" style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border);overflow-x:auto"></div>
+    <!-- Main content -->
+    <div id="msDashBody" style="flex:1;overflow-y:auto;padding:12px 16px"></div>
+  </div>
+</div>
+
+<!-- EXPORT PREVIEW MODAL -->
+<div class="ov" id="prevOv">
+  <div class="prev-modal">
+    <div class="mh" style="flex-shrink:0">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span class="mt">Export Preview</span>
+      <span style="margin-left:8px;font-size:10px;color:var(--text3)" id="prevInfo"></span>
+      <button class="mx" onclick="closeModal('prevOv')">✕</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+      <!-- Sidebar controls -->
+      <div class="prev-sidebar">
+        <div class="prev-ctrl-group">
+          <div class="prev-ctrl-label">Label Visibility</div>
+          <div class="prev-row">
+            <label>Show Labels</label>
+            <input type="checkbox" id="prevShowLabels" checked onchange="updatePreview()" style="accent-color:var(--accent)">
+          </div>
+        </div>
+        <div class="prev-ctrl-group">
+          <div class="prev-ctrl-label">Shape Styles</div>
+          <div class="prev-row">
+            <label>Stroke Width</label>
+            <input type="range" class="prev-range" id="prevStroke" min="0.5" max="20" step="0.5" value="1.8"
+              oninput="var v=parseFloat(this.value);document.getElementById('prevStrokeNum').value=v;updatePreview()">
+            <input type="number" id="prevStrokeNum" value="1.8" min="0.1" max="99" step="0.5"
+              style="width:46px;font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1);color:var(--accent);font-weight:700;text-align:center"
+              oninput="var v=parseFloat(this.value)||1.8;var sl=document.getElementById('prevStroke');sl.value=Math.min(v,parseFloat(sl.max));updatePreview()">
+          </div>
+          <div class="prev-row">
+            <label>Stroke Color</label>
+            <input type="checkbox" id="prevStrokeColor" onchange="updatePreview()" style="accent-color:var(--accent)">
+            <input type="color" id="prevStrokeColorVal" value="#000000" onchange="updatePreview()" style="width:28px;height:22px;border:none;cursor:pointer">
+            <span style="font-size:8px;color:var(--text3)">override</span>
+          </div>
+          <div class="prev-row">
+            <label>Point Size</label>
+            <input type="range" class="prev-range" id="prevPtSize" min="2" max="20" step="1" value="7" oninput="document.getElementById('prevPtSizeVal').textContent=this.value;updatePreview()">
+            <span class="prev-val" id="prevPtSizeVal">7</span>
+          </div>
+          <div class="prev-row">
+            <label>Fill Opacity</label>
+            <input type="range" class="prev-range" id="prevOpacity" min="0" max="1" step="0.05" value="0.2" oninput="document.getElementById('prevOpacityVal').textContent=Math.round(this.value*100)+'%';updatePreview()">
+            <span class="prev-val" id="prevOpacityVal">20%</span>
+          </div>
+        </div>
+        <div class="prev-ctrl-group">
+          <div class="prev-ctrl-label">Label Styles</div>
+          <div class="prev-row">
+            <label>Font Size (px)</label>
+            <input type="range" class="prev-range" id="prevFont" min="6" max="20" step="1" value="9" oninput="document.getElementById('prevFontVal').textContent=this.value;updatePreview()">
+            <span class="prev-val" id="prevFontVal">9</span>
+          </div>
+          <div class="prev-row">
+            <label>Label BG</label>
+            <input type="color" id="prevLblBg" value="#ffffff" onchange="updatePreview()" style="width:28px;height:22px;border:none;cursor:pointer">
+          </div>
+          <div class="prev-row">
+            <label>Label Alpha</label>
+            <input type="range" class="prev-range" id="prevLblAlpha" min="0" max="1" step="0.05" value="0.92" oninput="document.getElementById('prevLblAlphaVal').textContent=Math.round(this.value*100)+'%';updatePreview()">
+            <span class="prev-val" id="prevLblAlphaVal">92%</span>
+          </div>
+        </div>
+        <div class="prev-ctrl-group">
+          <div class="prev-ctrl-label">Layer Visibility</div>
+          <div class="prev-row" style="font-size:9px;color:var(--text3);line-height:1.5">
+            Visibility follows the<br>Layer Visibility bar above canvas.<br>
+            <span style="color:var(--accent);font-weight:700" id="prevHiddenNote"></span>
+          </div>
+        </div>
+        <div class="prev-ctrl-group">
+          <div class="prev-ctrl-label">Export Format</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="pbtn b" onclick="applyAndExportPNG()" style="font-size:9px">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Export PNG
+            </button>
+            <button class="pbtn" onclick="applyAndExportPDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Export PDF
+            </button>
+            <button class="pbtn" onclick="applyAndExportReport()" style="font-size:9px;background:var(--gbg);color:var(--green);border:1px solid var(--gbd)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+              PDF + Report
+            </button>
+          </div>
+        </div>
+        <button class="pbtn" onclick="closeModal('prevOv')" style="width:100%;margin-top:6px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:9px">Close</button>
+      </div>
+      <!-- Preview canvas -->
+      <div class="prev-canvas-wrap" id="prevCanvasWrap">
+        <canvas id="prevCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL (replaces old Cloud Sync — JSONBin removed) -->
+<div class="ov" id="syncOv">
+  <div class="modal" style="width:520px;max-height:90vh">
+    <div class="mh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span class="mt">Share &amp; Cloud Sync</span>
+      <button class="mx" onclick="closeModal('syncOv')">&#x2715;</button>
+    </div>
+    <div class="mb" style="padding:16px 18px;overflow-y:auto">
+
+      <!-- GAS Cloud Sync Status -->
+      <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span class="gas-dot" id="gasStatusDot2"></span>
+          Google Sheets Cloud Sync
+        </div>
+        <div style="font-size:9px;color:var(--text2);line-height:1.6;margin-bottom:8px">
+          ข้อมูลจะซิงค์กับ Google Sheets อัตโนมัติทุกครั้งที่บันทึก<br>
+          <span style="color:var(--text3)">PDF Floor Plan เก็บในเครื่องเท่านั้น (ขนาดใหญ่เกินไปสำหรับ Sheets)</span>
+        </div>
+        <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--text3);background:var(--bg3);padding:5px 8px;border-radius:4px;word-break:break-all;margin-bottom:8px" id="gasUrlDisplay"></div>
+        <div style="display:flex;gap:6px">
+          <button class="pbtn b" onclick="manualGasSync();updateGasModalStatus()" style="flex:1;font-size:9px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Pull ข้อมูลล่าสุดจาก Sheets
+          </button>
+          <button class="pbtn g" onclick="saveProjects();updateGasModalStatus()" style="flex:1;font-size:9px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+            Push ข้อมูลขึ้น Sheets
+          </button>
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:6px" id="gasModalStatus">สถานะ: ตรวจสอบ…</div>
+      </div>
+
+      <!-- Share Link -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">🔗 Share Link</div>
+      <p class="share-note">Embeds the full project into a URL. Anyone can open to import. Best for projects without large PDFs.</p>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input class="share-url-box" id="shareUrlBox" readonly placeholder="Click Generate to create link…">
+        <button class="pbtn b" id="copyLinkBtn" onclick="copyShareLink()" disabled style="flex-shrink:0;white-space:nowrap">Copy</button>
+      </div>
+      <button class="pbtn b" onclick="generateShare()" style="width:100%;margin-top:6px;font-size:9px">⚡ Generate Link &amp; Code</button>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- Project Code -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">📋 Project Code</div>
+      <p class="share-note">Floor plan images (compressed) are embedded. Paste this code on another device to import the full project.</p>
+      <textarea class="share-code" id="shareOut" readonly placeholder="Click Generate above to create code…" style="margin-top:6px"></textarea>
+      <button class="pbtn g" id="copyShareBtn" onclick="copyShareCode()" disabled style="width:100%;margin-top:6px">Copy Code</button>
+      <div id="shareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- Export options -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">📤 Export Canvas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <button class="pbtn b" onclick="exportPNG();closeModal('syncOv')" style="font-size:9px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG
+        </button>
+        <button class="pbtn" onclick="exportPDF();closeModal('syncOv')" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF Plan
+        </button>
+        <button class="pbtn" onclick="exportFloorReport();closeModal('syncOv')" style="font-size:9px;background:var(--gbg);color:var(--green);border:1px solid var(--gbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> PDF + Report
+        </button>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+
+      <!-- File Backup -->
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">💾 ไฟล์สำรอง (.ryg) — ทำงานออฟไลน์ได้</div>
+      <p class="share-note" style="margin-bottom:8px">ไฟล์ .ryg เก็บข้อมูลทุกอย่างรวม PDF Floor Plan — นำเข้ากลับได้ทุกเมื่อโดยไม่ต้องมีอินเทอร์เน็ต</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="pbtn b" onclick="exportProjectFile();closeModal('syncOv')" style="font-size:9px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
+          Export โครงการนี้ (.ryg)
+        </button>
+        <button class="pbtn" onclick="exportAllProjectsFile();closeModal('syncOv')" style="font-size:9px;background:var(--pbg);color:var(--purple);border:1px solid var(--pbd)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
+          Export ทุกโครงการ (.ryg)
+        </button>
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:6px;padding:8px 10px;border:1px dashed var(--border2);border-radius:6px;background:var(--bg2);cursor:pointer;font-size:9px;color:var(--text2);transition:.12s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        📂 Import จากไฟล์ .ryg (คลิกเพื่อเลือกไฟล์)
+        <input type="file" accept=".ryg,.json" style="display:none" onchange="importProjectFile(this);closeModal('syncOv')">
+      </label>
+    </div>
+    <div class="mf">
+      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('syncOv')">Close</button>
+    </div>
+  </div>
+</div>
+<!-- LABEL CODE GROUP REPORT MODAL -->
+<div class="ov" id="lcgOv">
+  <div class="modal" style="width:600px;max-height:90vh;display:flex;flex-direction:column">
+    <div class="mh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <span class="mt">Label Code Group Report</span>
+      <span id="lcgFloorLabel" style="font-size:9px;color:var(--text3);margin-left:6px;font-weight:400"></span>
+      <button class="mx" onclick="closeModal('lcgOv')">&#x2715;</button>
+    </div>
+    <!-- Legend / info bar -->
+    <div style="padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:8.5px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0">
+      <span>⬛ = Area (m²)</span><span>⟶ = Length (m)</span><span>● = Count</span>
+      <span>% = average Work % of shapes in group</span>
+      <span style="color:var(--purple);font-weight:700">Click group header to collapse/expand</span>
+    </div>
+    <div class="mb" id="lcgBody" style="flex:1;overflow-y:auto;padding:10px 12px"></div>
+    <div class="mf" style="gap:6px">
+      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('lcgOv')">Close</button>
+      <button class="pbtn b" onclick="exportLabelCSV()" style="font-size:9px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="pbtn" onclick="exportLabelPDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS SPINNER OVERLAY -->
+<div id="gasSpinner">
+  <div class="gas-spin-ring"></div>
+  <div class="gas-spin-msg">กำลังโหลดข้อมูล…</div>
+</div>
+
+</body>
+</html>
 <script>
 // ══════════════════════════════════════════════════════════════════
 // GOOGLE APPS SCRIPT BACKEND — ลิงก์ Web App ของคุณ
@@ -1545,9 +1835,9 @@ function clearMultiSel() {
 }
 
 /** Delete all shapes in multiSel */
-function deleteSelected() {
+async function deleteSelected() {
   if (!S.multiSel || !S.multiSel.length) return;
-  if (!confirm('Delete ' + S.multiSel.length + ' selected shapes?')) return;
+  if (!await ryg_confirm('Delete ' + S.multiSel.length + ' selected shape(s)?','Delete Shapes','Delete')) return;
   pushHistory();
   var ids = new Set(S.multiSel);
   S.shapes = S.shapes.filter(s => !ids.has(s.id));
@@ -2077,8 +2367,8 @@ async function openProject(id){
   renderCatFilterBar(); _refreshMultiSelUI(); _updateUndoBtn(); draw();
   pushHistory(); // baseline snapshot
 }
-function deleteProject(id){
-  if(!confirm('Delete this project? This cannot be undone.'))return;
+async function deleteProject(id){
+  if(!await ryg_confirm('Delete this project? This cannot be undone.','Delete Project','Delete'))return;
   APP.projects=APP.projects.filter(p=>p.id!==id);
   saveProjects(); renderHome();
 }
@@ -3669,7 +3959,7 @@ function doImport(){
     APP.projects.unshift(proj);saveProjects();closeModal('importOv');
     document.getElementById('importMsg').textContent='';
     renderHome();
-    if(confirm(`Project "${proj.name}" imported! Open it now?`))openProject(proj.id);
+    ryg_confirm(`Project "${proj.name}" imported! Open it now?`,'Import','Open').then(ok=>{if(ok)openProject(proj.id);});
   }catch(err){
     document.getElementById('importMsg').textContent='Import failed: '+err.message;
     document.getElementById('importMsg').style.color='var(--red)';
@@ -3867,8 +4157,9 @@ function importProjectFile(input) {
         _pushProjectFull(p);  // async, non-blocking
       });
       if (projs.length === 1) {
-        if (confirm('นำเข้า "'+projs[0].name+'" สำเร็จ — เปิดโครงการเลยไหม?'))
-          openProject(projs[0].id);
+        ryg_confirm('นำเข้า "'+projs[0].name+'" สำเร็จ — เปิดโครงการเลยไหม?','นำเข้าสำเร็จ','เปิดโครงการ').then(function(ok){
+          if(ok) openProject(projs[0].id);
+        });
       }
     } catch(err) {
       alert('❌ นำเข้าไม่สำเร็จ: ' + err.message);
@@ -4935,8 +5226,9 @@ function addBuilding(){
   document.getElementById('newBldName').value='';
   renderSetBldList();renderBldTabs();saveProjects();
 }
-function deleteBld(name){
-  const proj=APP.cp;if(!proj||!confirm(`Delete "${name}" and all its data?`))return;
+async function deleteBld(name){
+  const proj=APP.cp;if(!proj)return;
+  if(!await ryg_confirm(`Delete building "${name}" and all its floors and shapes?`,'Delete Building','Delete'))return;
   delete proj.buildings[name];
   if(APP.currentBuilding===name){
     const first=Object.keys(proj.buildings)[0];
@@ -4994,8 +5286,9 @@ function addFloor(){
   document.getElementById('newFlrName').value='';
   renderSetFlrList();renderFloorTabs();saveProjects();
 }
-function deleteFloor(bldName,flrName){
-  const proj=APP.cp;if(!proj||!confirm(`Delete floor "${flrName}"?`))return;
+async function deleteFloor(bldName,flrName){
+  const proj=APP.cp;if(!proj)return;
+  if(!await ryg_confirm(`Delete floor "${flrName}" from building "${bldName}"?`,'Delete Floor','Delete'))return;
   const bld=proj.buildings[bldName];delete bld.floors[flrName];
   if(bld.activeFloor===flrName)bld.activeFloor=Object.keys(bld.floors)[0]||null;
   if(bldName===APP.currentBuilding&&flrName===APP.currentFloor){
@@ -5126,8 +5419,8 @@ function saveItem(){
   renderItemFlrPills();
   renderItemList();renderCSA();refreshShapes();draw();saveProjects();
 }
-function deleteItem(id){
-  if(!confirm(`Delete item [${id}]?`))return;
+async function deleteItem(id){
+  if(!await ryg_confirm(`Delete work item [${id}]?`,'Delete Item','Delete'))return;
   const proj=APP.cp;if(!proj||!setItemBld)return;
   const bld=proj.buildings[setItemBld];
   Object.values(bld.floors).forEach(f=>{(f.shapes||[]).forEach(s=>{if(s.rowKey===id)s.rowKey=null;});delete(f.manuals||{})[id];});
@@ -5539,8 +5832,25 @@ function exportMilestonePDF(){
   }).catch(function(e){hint('PDF failed: '+e.message);});
 }
 
+// ── Custom confirm dialog (replaces browser confirm() which is blocked in sandboxed iframes) ──
+var _confirmResolve = null;
+function ryg_confirm(msg, title, okLabel){
+  return new Promise(function(resolve){
+    _confirmResolve = resolve;
+    document.getElementById('confirmMsg').textContent   = msg;
+    document.getElementById('confirmTitle').textContent = title || 'Confirm';
+    document.getElementById('confirmOkBtn').textContent = okLabel || 'Delete';
+    document.getElementById('confirmOkBtn').onclick     = function(){ document.getElementById('confirmOv').classList.remove('open'); if(_confirmResolve){_confirmResolve(true);_confirmResolve=null;} };
+    document.getElementById('confirmCancelBtn').onclick = function(){ document.getElementById('confirmOv').classList.remove('open'); if(_confirmResolve){_confirmResolve(false);_confirmResolve=null;} };
+    document.getElementById('confirmOv').classList.add('open');
+  });
+}
+
 function closeModal(id){document.getElementById(id)?.classList.remove('open');}
-document.querySelectorAll('.ov').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
+document.querySelectorAll('.ov').forEach(ov=>{
+  if(ov.id==='confirmOv')return; // confirm must use buttons only
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});
+});
 
 // ══════════════════════════════════════════════════════════════════
 // INIT
@@ -5556,279 +5866,3 @@ window.addEventListener('load', async () => {
   // renderHome() already called inside loadProjects()
 });
 </script>
-<!-- MILESTONE DASHBOARD MODAL -->
-<div class="ov" id="msDashOv">
-  <div class="modal" style="width:96vw;max-width:1100px;max-height:92vh;display:flex;flex-direction:column">
-    <div class="mh" style="flex-shrink:0">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span class="mt">Milestone Progress Dashboard · Remaining Work Tracking</span>
-      <span style="margin-left:8px;font-size:10px;color:var(--text3)" id="msDashSubtitle"></span>
-      <div style="margin-left:auto;display:flex;gap:6px">
-        <button class="pbtn" onclick="exportMilestonePDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export PDF
-        </button>
-        <button class="mx" onclick="closeModal('msDashOv')">✕</button>
-      </div>
-    </div>
-    <!-- Milestone date input bar -->
-    <div style="padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      <span style="font-size:10px;font-weight:700;color:var(--text2)">Milestones:</span>
-      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
-        <span style="color:var(--green);font-weight:700">RFS1</span>
-        <input type="date" id="msRFS1" value="2026-07-31" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
-        <span style="color:var(--yellow);font-weight:700">RFS2</span>
-        <input type="date" id="msRFS2" value="2026-08-31" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
-        <span style="color:var(--purple);font-weight:700">RFS3</span>
-        <input type="date" id="msRFS3" value="2026-09-30" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:10px">
-        <span style="color:var(--text2);font-weight:700">Data Date</span>
-        <input type="date" id="msDataDate" onchange="renderMsDash()" style="font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1)">
-      </div>
-      <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:4px">
-        <input type="checkbox" id="msShowRemaining" checked onchange="renderMsDash()" style="accent-color:var(--purple)"> Show Remaining %
-      </label>
-      <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:4px">
-        <input type="checkbox" id="msGroupByBldg" onchange="renderMsDash()" style="accent-color:var(--accent)"> Group by Building
-      </label>
-    </div>
-    <!-- Summary KPI strip -->
-    <div id="msKpiStrip" style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border);overflow-x:auto"></div>
-    <!-- Main content -->
-    <div id="msDashBody" style="flex:1;overflow-y:auto;padding:12px 16px"></div>
-  </div>
-</div>
-
-<!-- EXPORT PREVIEW MODAL -->
-<div class="ov" id="prevOv">
-  <div class="prev-modal">
-    <div class="mh" style="flex-shrink:0">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      <span class="mt">Export Preview</span>
-      <span style="margin-left:8px;font-size:10px;color:var(--text3)" id="prevInfo"></span>
-      <button class="mx" onclick="closeModal('prevOv')">✕</button>
-    </div>
-    <div style="display:flex;flex:1;overflow:hidden">
-      <!-- Sidebar controls -->
-      <div class="prev-sidebar">
-        <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Label Visibility</div>
-          <div class="prev-row">
-            <label>Show Labels</label>
-            <input type="checkbox" id="prevShowLabels" checked onchange="updatePreview()" style="accent-color:var(--accent)">
-          </div>
-        </div>
-        <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Shape Styles</div>
-          <div class="prev-row">
-            <label>Stroke Width</label>
-            <input type="range" class="prev-range" id="prevStroke" min="0.5" max="20" step="0.5" value="1.8"
-              oninput="var v=parseFloat(this.value);document.getElementById('prevStrokeNum').value=v;updatePreview()">
-            <input type="number" id="prevStrokeNum" value="1.8" min="0.1" max="99" step="0.5"
-              style="width:46px;font-size:9px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;background:var(--bg1);color:var(--accent);font-weight:700;text-align:center"
-              oninput="var v=parseFloat(this.value)||1.8;var sl=document.getElementById('prevStroke');sl.value=Math.min(v,parseFloat(sl.max));updatePreview()">
-          </div>
-          <div class="prev-row">
-            <label>Stroke Color</label>
-            <input type="checkbox" id="prevStrokeColor" onchange="updatePreview()" style="accent-color:var(--accent)">
-            <input type="color" id="prevStrokeColorVal" value="#000000" onchange="updatePreview()" style="width:28px;height:22px;border:none;cursor:pointer">
-            <span style="font-size:8px;color:var(--text3)">override</span>
-          </div>
-          <div class="prev-row">
-            <label>Point Size</label>
-            <input type="range" class="prev-range" id="prevPtSize" min="2" max="20" step="1" value="7" oninput="document.getElementById('prevPtSizeVal').textContent=this.value;updatePreview()">
-            <span class="prev-val" id="prevPtSizeVal">7</span>
-          </div>
-          <div class="prev-row">
-            <label>Fill Opacity</label>
-            <input type="range" class="prev-range" id="prevOpacity" min="0" max="1" step="0.05" value="0.2" oninput="document.getElementById('prevOpacityVal').textContent=Math.round(this.value*100)+'%';updatePreview()">
-            <span class="prev-val" id="prevOpacityVal">20%</span>
-          </div>
-        </div>
-        <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Label Styles</div>
-          <div class="prev-row">
-            <label>Font Size (px)</label>
-            <input type="range" class="prev-range" id="prevFont" min="6" max="20" step="1" value="9" oninput="document.getElementById('prevFontVal').textContent=this.value;updatePreview()">
-            <span class="prev-val" id="prevFontVal">9</span>
-          </div>
-          <div class="prev-row">
-            <label>Label BG</label>
-            <input type="color" id="prevLblBg" value="#ffffff" onchange="updatePreview()" style="width:28px;height:22px;border:none;cursor:pointer">
-          </div>
-          <div class="prev-row">
-            <label>Label Alpha</label>
-            <input type="range" class="prev-range" id="prevLblAlpha" min="0" max="1" step="0.05" value="0.92" oninput="document.getElementById('prevLblAlphaVal').textContent=Math.round(this.value*100)+'%';updatePreview()">
-            <span class="prev-val" id="prevLblAlphaVal">92%</span>
-          </div>
-        </div>
-        <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Layer Visibility</div>
-          <div class="prev-row" style="font-size:9px;color:var(--text3);line-height:1.5">
-            Visibility follows the<br>Layer Visibility bar above canvas.<br>
-            <span style="color:var(--accent);font-weight:700" id="prevHiddenNote"></span>
-          </div>
-        </div>
-        <div class="prev-ctrl-group">
-          <div class="prev-ctrl-label">Export Format</div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <button class="pbtn b" onclick="applyAndExportPNG()" style="font-size:9px">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              Export PNG
-            </button>
-            <button class="pbtn" onclick="applyAndExportPDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Export PDF
-            </button>
-            <button class="pbtn" onclick="applyAndExportReport()" style="font-size:9px;background:var(--gbg);color:var(--green);border:1px solid var(--gbd)">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-              PDF + Report
-            </button>
-          </div>
-        </div>
-        <button class="pbtn" onclick="closeModal('prevOv')" style="width:100%;margin-top:6px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:9px">Close</button>
-      </div>
-      <!-- Preview canvas -->
-      <div class="prev-canvas-wrap" id="prevCanvasWrap">
-        <canvas id="prevCanvas"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SHARE MODAL (replaces old Cloud Sync — JSONBin removed) -->
-<div class="ov" id="syncOv">
-  <div class="modal" style="width:520px;max-height:90vh">
-    <div class="mh">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      <span class="mt">Share &amp; Cloud Sync</span>
-      <button class="mx" onclick="closeModal('syncOv')">&#x2715;</button>
-    </div>
-    <div class="mb" style="padding:16px 18px;overflow-y:auto">
-
-      <!-- GAS Cloud Sync Status -->
-      <div style="background:var(--abc);border:1px solid var(--abd);border-radius:8px;padding:12px;margin-bottom:14px">
-        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px">
-          <span class="gas-dot" id="gasStatusDot2"></span>
-          Google Sheets Cloud Sync
-        </div>
-        <div style="font-size:9px;color:var(--text2);line-height:1.6;margin-bottom:8px">
-          ข้อมูลจะซิงค์กับ Google Sheets อัตโนมัติทุกครั้งที่บันทึก<br>
-          <span style="color:var(--text3)">PDF Floor Plan เก็บในเครื่องเท่านั้น (ขนาดใหญ่เกินไปสำหรับ Sheets)</span>
-        </div>
-        <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--text3);background:var(--bg3);padding:5px 8px;border-radius:4px;word-break:break-all;margin-bottom:8px" id="gasUrlDisplay"></div>
-        <div style="display:flex;gap:6px">
-          <button class="pbtn b" onclick="manualGasSync();updateGasModalStatus()" style="flex:1;font-size:9px">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
-            Pull ข้อมูลล่าสุดจาก Sheets
-          </button>
-          <button class="pbtn g" onclick="saveProjects();updateGasModalStatus()" style="flex:1;font-size:9px">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-            Push ข้อมูลขึ้น Sheets
-          </button>
-        </div>
-        <div style="font-size:8px;color:var(--text3);margin-top:6px" id="gasModalStatus">สถานะ: ตรวจสอบ…</div>
-      </div>
-
-      <!-- Share Link -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">🔗 Share Link</div>
-      <p class="share-note">Embeds the full project into a URL. Anyone can open to import. Best for projects without large PDFs.</p>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <input class="share-url-box" id="shareUrlBox" readonly placeholder="Click Generate to create link…">
-        <button class="pbtn b" id="copyLinkBtn" onclick="copyShareLink()" disabled style="flex-shrink:0;white-space:nowrap">Copy</button>
-      </div>
-      <button class="pbtn b" onclick="generateShare()" style="width:100%;margin-top:6px;font-size:9px">⚡ Generate Link &amp; Code</button>
-
-      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
-
-      <!-- Project Code -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">📋 Project Code</div>
-      <p class="share-note">Floor plan images (compressed) are embedded. Paste this code on another device to import the full project.</p>
-      <textarea class="share-code" id="shareOut" readonly placeholder="Click Generate above to create code…" style="margin-top:6px"></textarea>
-      <button class="pbtn g" id="copyShareBtn" onclick="copyShareCode()" disabled style="width:100%;margin-top:6px">Copy Code</button>
-      <div id="shareMsg" style="font-size:9px;min-height:14px;margin-top:6px;color:var(--green)"></div>
-
-      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
-
-      <!-- Export options -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">📤 Export Canvas</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-        <button class="pbtn b" onclick="exportPNG();closeModal('syncOv')" style="font-size:9px">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG
-        </button>
-        <button class="pbtn" onclick="exportPDF();closeModal('syncOv')" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF Plan
-        </button>
-        <button class="pbtn" onclick="exportFloorReport();closeModal('syncOv')" style="font-size:9px;background:var(--gbg);color:var(--green);border:1px solid var(--gbd)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> PDF + Report
-        </button>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin:14px 0"></div>
-
-      <!-- File Backup -->
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">💾 ไฟล์สำรอง (.ryg) — ทำงานออฟไลน์ได้</div>
-      <p class="share-note" style="margin-bottom:8px">ไฟล์ .ryg เก็บข้อมูลทุกอย่างรวม PDF Floor Plan — นำเข้ากลับได้ทุกเมื่อโดยไม่ต้องมีอินเทอร์เน็ต</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <button class="pbtn b" onclick="exportProjectFile();closeModal('syncOv')" style="font-size:9px">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
-          Export โครงการนี้ (.ryg)
-        </button>
-        <button class="pbtn" onclick="exportAllProjectsFile();closeModal('syncOv')" style="font-size:9px;background:var(--pbg);color:var(--purple);border:1px solid var(--pbd)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 10 12 15 7 10"/></svg>
-          Export ทุกโครงการ (.ryg)
-        </button>
-      </div>
-      <label style="display:flex;align-items:center;gap:7px;margin-top:6px;padding:8px 10px;border:1px dashed var(--border2);border-radius:6px;background:var(--bg2);cursor:pointer;font-size:9px;color:var(--text2);transition:.12s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        📂 Import จากไฟล์ .ryg (คลิกเพื่อเลือกไฟล์)
-        <input type="file" accept=".ryg,.json" style="display:none" onchange="importProjectFile(this);closeModal('syncOv')">
-      </label>
-    </div>
-    <div class="mf">
-      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('syncOv')">Close</button>
-    </div>
-  </div>
-</div>
-<!-- LABEL CODE GROUP REPORT MODAL -->
-<div class="ov" id="lcgOv">
-  <div class="modal" style="width:600px;max-height:90vh;display:flex;flex-direction:column">
-    <div class="mh">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-      <span class="mt">Label Code Group Report</span>
-      <span id="lcgFloorLabel" style="font-size:9px;color:var(--text3);margin-left:6px;font-weight:400"></span>
-      <button class="mx" onclick="closeModal('lcgOv')">&#x2715;</button>
-    </div>
-    <!-- Legend / info bar -->
-    <div style="padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:8.5px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0">
-      <span>⬛ = Area (m²)</span><span>⟶ = Length (m)</span><span>● = Count</span>
-      <span>% = average Work % of shapes in group</span>
-      <span style="color:var(--purple);font-weight:700">Click group header to collapse/expand</span>
-    </div>
-    <div class="mb" id="lcgBody" style="flex:1;overflow-y:auto;padding:10px 12px"></div>
-    <div class="mf" style="gap:6px">
-      <button class="pbtn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2)" onclick="closeModal('lcgOv')">Close</button>
-      <button class="pbtn b" onclick="exportLabelCSV()" style="font-size:9px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export CSV
-      </button>
-      <button class="pbtn" onclick="exportLabelPDF()" style="font-size:9px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd)">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Export PDF
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- GAS SPINNER OVERLAY -->
-<div id="gasSpinner">
-  <div class="gas-spin-ring"></div>
-  <div class="gas-spin-msg">กำลังโหลดข้อมูล…</div>
-</div>
-
-</body>
-</html>
